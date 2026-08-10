@@ -18,7 +18,7 @@ docker compose up --build
 
 - Client: http://localhost:5173
 - API: http://localhost:4000/api (health check at `/health`)
-- Postgres: localhost:5432
+- Postgres: localhost:5433 (mapped off the default 5432 to avoid clashing with a local Postgres install; containers talk to each other on the standard internal port)
 
 ## Running without Docker
 
@@ -28,4 +28,12 @@ cd server && npm install && npm run dev
 
 # client
 cd client && npm install && npm run dev
+```
+
+## Database migrations
+
+```bash
+cd server
+npm run migrate        # apply all pending migrations
+npm run migrate:undo   # roll back the most recent migration
 ```
