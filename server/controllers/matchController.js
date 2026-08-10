@@ -2,7 +2,7 @@ const { Match, Gig, User, Transaction, Review } = require('../models');
 const paymentService = require('../services/paymentService');
 
 const MATCH_INCLUDES = [
-  { model: Gig, as: 'gig' },
+  { model: Gig, as: 'gig', include: [{ model: User, as: 'client' }] },
   { model: User, as: 'worker' },
   { model: Transaction, as: 'transaction' },
   { model: Review, as: 'reviews' },
