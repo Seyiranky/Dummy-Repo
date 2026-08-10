@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
 
 module.exports = {
   development: {
@@ -16,6 +16,7 @@ module.exports = {
     host: process.env.DB_HOST || '127.0.0.1',
     port: process.env.DB_PORT || 5432,
     dialect: 'postgres',
+    logging: false,
   },
   production: {
     use_env_variable: 'DATABASE_URL',

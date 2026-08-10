@@ -10,7 +10,7 @@ exports.verifyToken = (req, res, next) => {
   try {
     req.user = jwt.verify(token, process.env.JWT_SECRET);
     next();
-  } catch (err) {
+  } catch {
     return res.status(401).json({ message: 'Invalid or expired token' });
   }
 };

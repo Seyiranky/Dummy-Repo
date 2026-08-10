@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  server:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: isoko
+          POSTGRES_PASSWORD: isoko
+          POSTGRES_DB: isoko_talents_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U isoko"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USER: isoko
+      DB_PASSWORD: isoko
+      DB_NAME_TEST: isoko_talents_test
+      JWT_SECRET: ci-test-secret
+      JWT_EXPIRES_IN: 7d
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Lint
+        working-directory: server
+        run: npm run lint
+
+      - name: Run migrations
+        working-directory: server
+        run: npm run migrate:test
+
+      - name: Seed reference data
+        working-directory: server
+        run: npm run seed:test
+
+      - name: Run tests
+        working-directory: server
+        run: npm test
+
+  client:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install dependencies
+        working-directory: client
+        run: npm ci
+
+      - name: Lint
+        working-directory: client
+        run: npm run lint
+
+      - name: Type-check and build
+        working-directory: client
+        run: npm run build
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: [server, client]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build server image
+        run: docker build -t isoko-talents-server ./server
+
+      - name: Build client image
+        run: docker build -t isoko-talents-client ./client
