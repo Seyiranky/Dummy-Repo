@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchMatches } from '../../store/slices/matchSlice';
 import { matchApi } from '../../api/matchApi';
 import { transactionApi } from '../../api/transactionApi';
 import { reviewApi } from '../../api/reviewApi';
 import Select from '../common/Select';
+import IdentityLink from '../common/IdentityLink';
 import { statusBadgeClass } from '../../utils/statusBadge';
 import type { Match, MatchStatus } from '../../types';
 
@@ -87,15 +87,11 @@ const MatchList = () => {
             <div className="card-row">
               <div>
                 <span className="card-title">{match.gig?.title ?? 'Gig'}</span>
-                <div className="muted">
-                  {counterparty ? (
-                    <Link to={`/profile/${counterparty.id}`} className="link-reset">
-                      {counterparty.name}
-                    </Link>
-                  ) : (
-                    'Unknown'
-                  )}
-                </div>
+                {counterparty ? (
+                  <IdentityLink id={counterparty.id} name={counterparty.name} size={24} />
+                ) : (
+                  <div className="muted">Unknown</div>
+                )}
               </div>
               <span className={statusBadgeClass(match.status)}>{match.status}</span>
             </div>

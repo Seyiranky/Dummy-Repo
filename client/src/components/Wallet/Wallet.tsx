@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
 import { transactionApi } from '../../api/transactionApi';
 import { statusBadgeClass } from '../../utils/statusBadge';
+import IdentityLink from '../common/IdentityLink';
 import type { Transaction } from '../../types';
 
 const Wallet = () => {
@@ -49,16 +49,12 @@ const Wallet = () => {
               <div className="card-row">
                 <div>
                   <span className="card-title">{t.match?.gig?.title ?? 'Gig'}</span>
-                  <div className="muted">
-                    {isClient ? 'Paid to ' : 'Received from '}
-                    {counterparty ? (
-                      <Link to={`/profile/${counterparty.id}`} className="link-reset">
-                        {counterparty.name}
-                      </Link>
-                    ) : (
-                      'unknown'
-                    )}
-                  </div>
+                  <div className="muted">{isClient ? 'Paid to' : 'Received from'}</div>
+                  {counterparty ? (
+                    <IdentityLink id={counterparty.id} name={counterparty.name} size={24} />
+                  ) : (
+                    <div className="muted">Unknown</div>
+                  )}
                 </div>
                 <div className="text-right">
                   <div className="card-title">{Number(t.amount).toLocaleString()} RWF</div>

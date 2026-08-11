@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { userApi } from '../../api/userApi';
 import { reviewApi } from '../../api/reviewApi';
 import TrustScoreRing from './TrustScoreRing';
+import Avatar from '../common/Avatar';
+import IdentityLink from '../common/IdentityLink';
+import SkillThumbnail from '../common/SkillThumbnail';
 import type { PublicProfile, Review, UserSkill } from '../../types';
 
 const WorkerProfile = () => {
@@ -38,10 +41,13 @@ const WorkerProfile = () => {
   return (
     <div>
       <div className="section profile-header">
-        <TrustScoreRing trustScore={profile.trustScore} />
+        <Avatar name={profile.name} size={64} />
         <div>
           <h1 className="profile-name">{profile.name}</h1>
           <span className="badge">{profile.role}</span>
+        </div>
+        <div className="dashboard-trust">
+          <TrustScoreRing trustScore={profile.trustScore} />
         </div>
       </div>
 
@@ -61,6 +67,7 @@ const WorkerProfile = () => {
             <div className="skill-tag-list">
               {skills.map((us) => (
                 <span key={us.id} className="skill-tag">
+                  <SkillThumbnail category={us.skill?.category} size={20} />
                   {us.skill?.name}
                 </span>
               ))}
@@ -79,11 +86,7 @@ const WorkerProfile = () => {
               <span className="muted">{new Date(review.createdAt).toLocaleDateString()}</span>
             </div>
             {review.comment && <p>{review.comment}</p>}
-            {review.author && (
-              <Link to={`/profile/${review.author.id}`} className="muted">
-                — {review.author.name}
-              </Link>
-            )}
+            {review.author && <IdentityLink id={review.author.id} name={review.author.name} size={24} />}
           </div>
         ))}
       </div>

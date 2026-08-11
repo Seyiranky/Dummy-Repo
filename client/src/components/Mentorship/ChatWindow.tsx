@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { skillTaskApi } from '../../api/skillTaskApi';
 import { messageApi } from '../../api/messageApi';
+import Avatar from '../common/Avatar';
 import type { Message, User } from '../../types';
 
 const ChatWindow = () => {
@@ -68,14 +69,21 @@ const ChatWindow = () => {
             <button
               key={contact.id}
               type="button"
-              className={contact.id === selected?.id ? 'active' : ''}
+              className={`identity ${contact.id === selected?.id ? 'active' : ''}`}
               onClick={() => setSelected(contact)}
             >
+              <Avatar name={contact.name} size={28} />
               {contact.name}
             </button>
           ))}
         </div>
         <div>
+          {selected && (
+            <div className="identity chat-header">
+              <Avatar name={selected.name} size={28} />
+              <span className="identity-name">{selected.name}</span>
+            </div>
+          )}
           <div className="message-thread" key={threadKey}>
             {messages.map((message) => (
               <div

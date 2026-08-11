@@ -4,6 +4,10 @@ import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchMatches } from '../../store/slices/matchSlice';
 import { skillTaskApi } from '../../api/skillTaskApi';
 import { statusBadgeClass } from '../../utils/statusBadge';
+import Avatar from '../common/Avatar';
+import IdentityLink from '../common/IdentityLink';
+import TrustScoreRing from '../Profile/TrustScoreRing';
+import WalletSummary from '../Wallet/WalletSummary';
 import type { SkillTask } from '../../types';
 
 const Dashboard = () => {
@@ -36,14 +40,14 @@ const Dashboard = () => {
 
   return (
     <div>
-      <div className="section">
-        <h1>Welcome, {profile.name}</h1>
-        <div className="card-row">
+      <div className="section profile-header">
+        <Avatar name={profile.name} size={64} />
+        <div>
+          <h1 className="profile-name">Welcome, {profile.name}</h1>
           <span className="badge">{profile.role}</span>
-          <div className="trust-score-stat">
-            <span className="muted">Trust score</span>
-            <span className="trust-score">{profile.trustScore.toFixed(1)} / 5</span>
-          </div>
+        </div>
+        <div className="dashboard-trust">
+          <TrustScoreRing trustScore={profile.trustScore} />
         </div>
       </div>
 
@@ -90,6 +94,8 @@ const Dashboard = () => {
         </div>
       )}
 
+      {(role === 'worker' || role === 'client') && <WalletSummary />}
+
       <div className="section">
         <h2>Your matches</h2>
         {matches.length === 0 && <p className="muted">No matches yet.</p>}
@@ -99,15 +105,7 @@ const Dashboard = () => {
             <div key={match.id} className="card card-row">
               <div>
                 <span className="card-title">{match.gig?.title ?? 'Gig'}</span>
-                <div className="muted">
-                  {counterparty ? (
-                    <Link to={`/profile/${counterparty.id}`} className="link-reset">
-                      {counterparty.name}
-                    </Link>
-                  ) : (
-                    'Unknown'
-                  )}
-                </div>
+                {counterparty && <IdentityLink id={counterparty.id} name={counterparty.name} size={24} />}
               </div>
               <span className={statusBadgeClass(match.status)}>{match.status}</span>
             </div>

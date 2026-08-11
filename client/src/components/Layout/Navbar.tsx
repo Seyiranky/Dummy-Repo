@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { logout } from '../../store/slices/authSlice';
+import Avatar from '../common/Avatar';
 
 const Navbar = () => {
   const { token, role, profile } = useAppSelector((state) => state.auth);
@@ -26,9 +27,12 @@ const Navbar = () => {
           {(role === 'worker' || role === 'client') && <Link to="/wallet">Wallet</Link>}
           <Link to="/settings">Settings</Link>
           {role === 'admin' && <Link to="/admin">Admin</Link>}
-          <span className="navbar-user">
-            {profile?.name ?? '...'} ({role})
-          </span>
+          <Link to="/settings" className="identity link-reset">
+            <Avatar name={profile?.name ?? '?'} size={28} />
+            <span className="navbar-user">
+              {profile?.name ?? '...'} ({role})
+            </span>
+          </Link>
           <button type="button" onClick={handleLogout}>
             Log out
           </button>

@@ -3,6 +3,8 @@ import { useAppSelector } from '../../store/hooks';
 import { skillApi } from '../../api/skillApi';
 import { skillTaskApi } from '../../api/skillTaskApi';
 import Select from '../common/Select';
+import IdentityLink from '../common/IdentityLink';
+import SkillThumbnail from '../common/SkillThumbnail';
 import { statusBadgeClass } from '../../utils/statusBadge';
 import type { Skill, SkillTask } from '../../types';
 
@@ -73,9 +75,16 @@ const WorkerSubmission = ({ tasks, onSubmitted }: { tasks: SkillTask[]; onSubmit
       {tasks.length === 0 && <p className="muted">No submissions yet.</p>}
       {tasks.map((task) => (
         <div key={task.id} className="card card-row">
-          <div>
-            <span className="card-title">{task.skill?.name}</span>
-            <div className="muted">Reviewer: {task.reviewer?.name ?? 'unassigned'}</div>
+          <div className="skill-line">
+            <SkillThumbnail category={task.skill?.category} />
+            <div>
+              <span className="card-title">{task.skill?.name}</span>
+              {task.reviewer ? (
+                <IdentityLink id={task.reviewer.id} name={task.reviewer.name} size={24} />
+              ) : (
+                <div className="muted">Reviewer unassigned</div>
+              )}
+            </div>
           </div>
           <span className={statusBadgeClass(task.status)}>{task.status}</span>
         </div>
@@ -107,9 +116,12 @@ const MentorQueue = ({ tasks, onReviewed }: { tasks: SkillTask[]; onReviewed: ()
       {pending.map((task) => (
         <div key={task.id} className="card">
           <div className="card-row">
-            <div>
-              <span className="card-title">{task.skill?.name}</span>
-              <div className="muted">Worker: {task.worker?.name}</div>
+            <div className="skill-line">
+              <SkillThumbnail category={task.skill?.category} />
+              <div>
+                <span className="card-title">{task.skill?.name}</span>
+                {task.worker && <IdentityLink id={task.worker.id} name={task.worker.name} size={24} />}
+              </div>
             </div>
           </div>
           <p>
@@ -144,9 +156,12 @@ const MentorQueue = ({ tasks, onReviewed }: { tasks: SkillTask[]; onReviewed: ()
       {decided.length === 0 && <p className="muted">No reviews completed yet.</p>}
       {decided.map((task) => (
         <div key={task.id} className="card card-row">
-          <div>
-            <span className="card-title">{task.skill?.name}</span>
-            <div className="muted">Worker: {task.worker?.name}</div>
+          <div className="skill-line">
+            <SkillThumbnail category={task.skill?.category} />
+            <div>
+              <span className="card-title">{task.skill?.name}</span>
+              {task.worker && <IdentityLink id={task.worker.id} name={task.worker.name} size={24} />}
+            </div>
           </div>
           <span className={statusBadgeClass(task.status)}>{task.status}</span>
         </div>

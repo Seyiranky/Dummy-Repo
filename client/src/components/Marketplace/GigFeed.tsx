@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchGigs } from '../../store/slices/gigSlice';
 import { fetchMatches } from '../../store/slices/matchSlice';
 import { gigApi } from '../../api/gigApi';
 import { matchApi } from '../../api/matchApi';
 import { statusBadgeClass } from '../../utils/statusBadge';
+import IdentityLink from '../common/IdentityLink';
+import SkillThumbnail from '../common/SkillThumbnail';
 import type { Candidate, Gig } from '../../types';
 
 const CandidateList = ({ gig, onMatched }: { gig: Gig; onMatched: () => void }) => {
@@ -46,13 +47,13 @@ const CandidateList = ({ gig, onMatched }: { gig: Gig; onMatched: () => void }) 
   return (
     <div>
       {candidates.map((candidate) => (
-        <div key={candidate.workerId} className="card-row">
-          <span>
-            <Link to={`/profile/${candidate.workerId}`} className="link-reset">
-              {candidate.name}
-            </Link>{' '}
-            — trust {candidate.trustScore.toFixed(1)}, {candidate.distanceKm} km away
-          </span>
+        <div key={candidate.workerId} className="card card-row candidate-row">
+          <div className="identity">
+            <IdentityLink id={candidate.workerId} name={candidate.name} size={28} />
+            <span className="muted">
+              trust {candidate.trustScore.toFixed(1)}, {candidate.distanceKm} km away
+            </span>
+          </div>
           <button
             type="button"
             className="btn-primary"
@@ -93,9 +94,12 @@ const GigFeed = () => {
       {visibleGigs.map((gig) => (
         <div key={gig.id} className="card">
           <div className="card-row">
-            <div>
-              <span className="card-title">{gig.title}</span>
-              <div className="muted">{gig.skill?.name}</div>
+            <div className="skill-line">
+              <SkillThumbnail category={gig.skill?.category} size={48} />
+              <div>
+                <span className="card-title">{gig.title}</span>
+                <div className="muted">{gig.skill?.name}</div>
+              </div>
             </div>
             <span className={statusBadgeClass(gig.status)}>{gig.status}</span>
           </div>

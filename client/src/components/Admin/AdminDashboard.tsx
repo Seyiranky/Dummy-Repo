@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { adminApi } from '../../api/adminApi';
 import { statusBadgeClass } from '../../utils/statusBadge';
+import IdentityLink from '../common/IdentityLink';
+import SkillThumbnail from '../common/SkillThumbnail';
 import type { Gig, User } from '../../types';
 
 const AdminDashboard = () => {
@@ -59,9 +60,7 @@ const AdminDashboard = () => {
               {users.map((u) => (
                 <tr key={u.id}>
                   <td>
-                    <Link to={`/profile/${u.id}`} className="link-reset">
-                      {u.name}
-                    </Link>
+                    <IdentityLink id={u.id} name={u.name} size={24} />
                   </td>
                   <td>{u.email}</td>
                   <td>
@@ -95,14 +94,17 @@ const AdminDashboard = () => {
                   <td>{g.title}</td>
                   <td>
                     {g.client ? (
-                      <Link to={`/profile/${g.client.id}`} className="link-reset">
-                        {g.client.name}
-                      </Link>
+                      <IdentityLink id={g.client.id} name={g.client.name} size={24} />
                     ) : (
                       'Unknown'
                     )}
                   </td>
-                  <td>{g.skill?.name}</td>
+                  <td>
+                    <div className="skill-line">
+                      <SkillThumbnail category={g.skill?.category} size={24} />
+                      {g.skill?.name}
+                    </div>
+                  </td>
                   <td>{Number(g.budget).toLocaleString()} RWF</td>
                   <td>
                     <span className={statusBadgeClass(g.status)}>{g.status}</span>
