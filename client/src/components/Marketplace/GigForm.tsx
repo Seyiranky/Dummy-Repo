@@ -7,7 +7,11 @@ import Select from '../common/Select';
 import { KIGALI_LOCATIONS } from '../../constants/locations';
 import type { Skill } from '../../types';
 
-const GigForm = () => {
+interface GigFormProps {
+  onPosted?: () => void;
+}
+
+const GigForm = ({ onPosted }: GigFormProps) => {
   const dispatch = useAppDispatch();
   const [skills, setSkills] = useState<Skill[]>([]);
   const [title, setTitle] = useState('');
@@ -43,6 +47,7 @@ const GigForm = () => {
       setDescription('');
       setBudget('');
       dispatch(fetchGigs());
+      onPosted?.();
     } catch {
       setError('Failed to post gig. Please check your inputs.');
     } finally {
@@ -51,43 +56,40 @@ const GigForm = () => {
   };
 
   return (
-    <div className="section">
-      <h2>Post a gig</h2>
-      <form onSubmit={handleSubmit}>
-        <label>
-          Title
-          <input value={title} onChange={(e) => setTitle(e.target.value)} required />
-        </label>
-        <label>
-          Description
-          <textarea value={description} onChange={(e) => setDescription(e.target.value)} required rows={3} />
-        </label>
-        <label>
-          Budget (RWF)
-          <input type="number" min="0" value={budget} onChange={(e) => setBudget(e.target.value)} required />
-        </label>
-        <label>
-          Skill category
-          <Select
-            value={skillId}
-            onChange={setSkillId}
-            options={skills.map((skill) => ({ value: skill.id, label: skill.name }))}
-          />
-        </label>
-        <label>
-          Location
-          <Select
-            value={locationName}
-            onChange={setLocationName}
-            options={KIGALI_LOCATIONS.map((location) => ({ value: location.name, label: location.name }))}
-          />
-        </label>
-        {error && <p className="form-error">{error}</p>}
-        <button type="submit" className="btn-primary" disabled={submitting || !skillId}>
-          {submitting ? 'Posting...' : 'Post gig'}
-        </button>
-      </form>
-    </div>
+    <form onSubmit={handleSubmit}>
+      <label>
+        Title
+        <input value={title} onChange={(e) => setTitle(e.target.value)} required />
+      </label>
+      <label>
+        Description
+        <textarea value={description} onChange={(e) => setDescription(e.target.value)} required rows={3} />
+      </label>
+      <label>
+        Budget (RWF)
+        <input type="number" min="0" value={budget} onChange={(e) => setBudget(e.target.value)} required />
+      </label>
+      <label>
+        Skill category
+        <Select
+          value={skillId}
+          onChange={setSkillId}
+          options={skills.map((skill) => ({ value: skill.id, label: skill.name }))}
+        />
+      </label>
+      <label>
+        Location
+        <Select
+          value={locationName}
+          onChange={setLocationName}
+          options={KIGALI_LOCATIONS.map((location) => ({ value: location.name, label: location.name }))}
+        />
+      </label>
+      {error && <p className="form-error">{error}</p>}
+      <button type="submit" className="btn-primary" disabled={submitting || !skillId}>
+        {submitting ? 'Posting...' : 'Post gig'}
+      </button>
+    </form>
   );
 };
 

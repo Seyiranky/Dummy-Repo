@@ -38,37 +38,27 @@ const ProfileEditor = () => {
     }
   };
 
-  const hasLocation = profile?.locationLat != null && profile?.locationLng != null;
-
   return (
-    <div className="section">
-      <h2>Your profile</h2>
-      {role === 'worker' && !hasLocation && (
-        <p className="form-error">
-          Set your location so clients can find you in nearby gig matches.
-        </p>
-      )}
-      <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit}>
+      <label>
+        Bio
+        <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={2} />
+      </label>
+      {role === 'worker' && (
         <label>
-          Bio
-          <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={2} />
+          Location
+          <Select
+            value={locationName}
+            onChange={setLocationName}
+            options={KIGALI_LOCATIONS.map((location) => ({ value: location.name, label: location.name }))}
+          />
         </label>
-        {role === 'worker' && (
-          <label>
-            Location
-            <Select
-              value={locationName}
-              onChange={setLocationName}
-              options={KIGALI_LOCATIONS.map((location) => ({ value: location.name, label: location.name }))}
-            />
-          </label>
-        )}
-        <button type="submit" className="btn-primary" disabled={saving}>
-          {saving ? 'Saving...' : 'Save profile'}
-        </button>
-        {saved && <span className="muted"> Saved.</span>}
-      </form>
-    </div>
+      )}
+      <button type="submit" className="btn-primary" disabled={saving}>
+        {saving ? 'Saving...' : 'Save profile'}
+      </button>
+      {saved && <span className="muted"> Saved.</span>}
+    </form>
   );
 };
 

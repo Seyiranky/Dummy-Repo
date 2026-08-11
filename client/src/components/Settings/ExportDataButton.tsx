@@ -23,8 +23,7 @@ const ExportDataButton = () => {
   };
 
   return (
-    <div className="section">
-      <h2>Your data</h2>
+    <div className="settings-divider">
       <p className="muted">
         Download a copy of everything Isoko Talents holds about your account — your profile, skill
         submissions, gigs, matches, payments, reviews, and messages — as a JSON file.

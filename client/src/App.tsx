@@ -1,16 +1,13 @@
 import { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import Navbar from './components/Layout/Navbar';
+import Sidebar from './components/Layout/Sidebar';
 import ProtectedRoute from './components/Layout/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import MarketplacePage from './pages/MarketplacePage';
-import VerificationPage from './pages/VerificationPage';
 import MentorshipPage from './pages/MentorshipPage';
 import ProfilePage from './pages/ProfilePage';
-import WalletPage from './pages/WalletPage';
-import SettingsPage from './pages/SettingsPage';
 import AdminPage from './pages/AdminPage';
 import { useAppDispatch, useAppSelector } from './store/hooks';
 import { fetchCurrentUser } from './store/slices/authSlice';
@@ -27,22 +24,23 @@ function App() {
   }, [token, profile, dispatch]);
 
   return (
-    <>
-      <Navbar />
+    <div className="app-shell">
+      <Sidebar />
       <main className="app-main">
         <Routes>
           <Route path="/" element={<Navigate to={token ? '/dashboard' : '/login'} replace />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          {/* Wallet, Settings, and Verification now live as sections on the Dashboard. */}
+          <Route path="/wallet" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/settings" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/verification" element={<Navigate to="/dashboard" replace />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/marketplace" element={<MarketplacePage />} />
-            <Route path="/wallet" element={<WalletPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
             <Route path="/profile/:id" element={<ProfilePage />} />
           </Route>
           <Route element={<ProtectedRoute allowedRoles={['worker', 'mentor']} />}>
-            <Route path="/verification" element={<VerificationPage />} />
             <Route path="/mentorship" element={<MentorshipPage />} />
           </Route>
           <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
@@ -50,7 +48,7 @@ function App() {
           </Route>
         </Routes>
       </main>
-    </>
+    </div>
   );
 }
 

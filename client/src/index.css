@@ -12,34 +12,52 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  /* Isoko Talents "Trust & Growth" palette */
-  --color-bg-page: #f8fafc;
-  --color-bg-surface: #ffffff;
-  --color-text: #334155;
-  --color-text-muted: #64748b;
-  --color-border: #e2e8f0;
+  /* Isoko Talents "Baltic Coast" palette. Cream is the primary canvas color
+     used throughout the app; baltic-blue/teal/verdigris/mint-leaf form the
+     accent family. Red is kept only as a usability-necessary exception for
+     errors/danger — it isn't part of the brand palette. */
+  --color-cream: #f0f3bd;
+  --color-baltic-blue: #05668d;
+  --color-teal: #028090;
+  --color-verdigris: #00a896;
+  --color-mint-leaf: #02c39a;
 
-  --color-primary: #2563eb;
-  --color-primary-hover: #1e40af;
+  /* Cream is the background everywhere — page canvas and every surface
+     (nav, cards, modals, inputs) share the exact same cream. Depth comes
+     from borders/shadows, not a second shade. */
+  --color-bg-page: var(--color-cream);
+  --color-bg-surface: var(--color-cream);
+  --color-text: var(--color-baltic-blue);
+  --color-text-muted: #4f7a8b;
+  --color-border: #d8e0a8;
+
+  /* Ink: the primary UI action color (baltic-blue in light mode, flips to cream in dark). */
+  --color-ink: var(--color-baltic-blue);
+  --color-ink-contrast: var(--color-cream);
+
+  /* The accent family: mint-leaf for emphasis, verdigris for its hover step. */
+  --color-primary: var(--color-mint-leaf);
+  --color-primary-hover: var(--color-verdigris);
   --color-primary-contrast: #ffffff;
+  --color-accent: var(--color-mint-leaf);
 
-  --color-accent: #10b981;
+  --color-success: var(--color-mint-leaf);
+  --color-success-bg: #e1f7ef;
+  --color-success-text: #017a5e;
 
-  --color-success: #10b981;
-  --color-success-bg: #ecfdf5;
-  --color-success-text: #047857;
+  --color-error: #d6483f;
+  --color-error-bg: #fbe9e7;
+  --color-error-text: #a53229;
 
-  --color-warning: #f59e0b;
-  --color-warning-bg: #fffbeb;
-  --color-warning-text: #b45309;
+  /* "Pending" — muted teal, not a foreign hue. */
+  --color-warning: #7fa3ac;
+  --color-warning-bg: #eaf1e4;
+  --color-warning-text: #4d6b73;
 
-  --color-error: #dc2626;
-  --color-error-bg: #fef2f2;
-  --color-error-text: #b91c1c;
-
-  --color-info: #2563eb;
-  --color-info-bg: #eff6ff;
-  --color-info-text: #1d4ed8;
+  /* "Active / in-progress" — baltic-blue outline. */
+  --color-info: var(--color-baltic-blue);
+  --color-info-bg: #e2eef2;
+  --color-info-text: var(--color-baltic-blue);
 
   color: var(--color-text);
   background-color: var(--color-bg-page);
@@ -47,33 +65,35 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-bg-page: #0b1220;
-    --color-bg-surface: #1e293b;
-    --color-text: #e2e8f0;
-    --color-text-muted: #94a3b8;
-    --color-border: #334155;
+    --color-bg-page: #052f3d;
+    --color-bg-surface: #0a4258;
+    --color-text: var(--color-cream);
+    --color-text-muted: #a6c6cd;
+    --color-border: #14586f;
 
-    --color-primary: #3b82f6;
-    --color-primary-hover: #60a5fa;
-    --color-primary-contrast: #ffffff;
+    --color-ink: var(--color-cream);
+    --color-ink-contrast: var(--color-baltic-blue);
 
-    --color-accent: #34d399;
+    --color-primary: var(--color-mint-leaf);
+    --color-primary-hover: #5eebc9;
+    --color-primary-contrast: #052f3d;
+    --color-accent: var(--color-mint-leaf);
 
-    --color-success: #34d399;
-    --color-success-bg: rgba(52, 211, 153, 0.15);
-    --color-success-text: #6ee7b7;
+    --color-success: var(--color-mint-leaf);
+    --color-success-bg: rgba(2, 195, 154, 0.18);
+    --color-success-text: #5eebc9;
 
-    --color-warning: #fbbf24;
-    --color-warning-bg: rgba(251, 191, 36, 0.15);
-    --color-warning-text: #fcd34d;
+    --color-error: #f2867e;
+    --color-error-bg: rgba(242, 134, 126, 0.18);
+    --color-error-text: #fbc4bf;
 
-    --color-error: #f87171;
-    --color-error-bg: rgba(248, 113, 113, 0.15);
-    --color-error-text: #fca5a5;
+    --color-warning: #6e93a0;
+    --color-warning-bg: rgba(110, 147, 160, 0.2);
+    --color-warning-text: #c4d8de;
 
-    --color-info: #60a5fa;
-    --color-info-bg: rgba(96, 165, 250, 0.15);
-    --color-info-text: #93c5fd;
+    --color-info: var(--color-cream);
+    --color-info-bg: rgba(240, 243, 189, 0.12);
+    --color-info-text: var(--color-cream);
   }
 }
 
@@ -130,8 +150,8 @@ button {
     color 0.2s;
 }
 button:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  border-color: var(--color-ink);
+  color: var(--color-ink);
 }
 button:disabled {
   opacity: 0.6;
@@ -144,14 +164,15 @@ button:focus-visible {
 }
 
 .btn-primary {
-  background-color: var(--color-primary);
-  border-color: var(--color-primary);
-  color: var(--color-primary-contrast);
+  background-color: var(--color-ink);
+  border-color: var(--color-ink);
+  color: var(--color-ink-contrast);
 }
 .btn-primary:hover {
-  background-color: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
-  color: var(--color-primary-contrast);
+  background-color: var(--color-ink);
+  border-color: var(--color-ink);
+  color: var(--color-ink-contrast);
+  opacity: 0.85;
 }
 
 .btn-success {
@@ -174,4 +195,17 @@ button:focus-visible {
   background-color: var(--color-error-bg);
   border-color: var(--color-error);
   color: var(--color-error);
+}
+
+.btn-text {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+.btn-text:hover {
+  border-color: transparent;
+  color: var(--color-primary-hover);
+  text-decoration: underline;
 }
