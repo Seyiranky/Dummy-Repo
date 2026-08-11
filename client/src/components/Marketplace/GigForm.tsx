@@ -3,6 +3,8 @@ import { skillApi } from '../../api/skillApi';
 import { gigApi } from '../../api/gigApi';
 import { useAppDispatch } from '../../store/hooks';
 import { fetchGigs } from '../../store/slices/gigSlice';
+import Select from '../common/Select';
+import { KIGALI_LOCATIONS } from '../../constants/locations';
 import type { Skill } from '../../types';
 
 const GigForm = () => {
@@ -12,8 +14,7 @@ const GigForm = () => {
   const [description, setDescription] = useState('');
   const [budget, setBudget] = useState('');
   const [skillId, setSkillId] = useState('');
-  const [locationLat, setLocationLat] = useState('');
-  const [locationLng, setLocationLng] = useState('');
+  const [locationName, setLocationName] = useState(KIGALI_LOCATIONS[0].name);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -29,19 +30,18 @@ const GigForm = () => {
     setError(null);
     setSubmitting(true);
     try {
+      const location = KIGALI_LOCATIONS.find((l) => l.name === locationName) ?? KIGALI_LOCATIONS[0];
       await gigApi.createGig({
         title,
         description,
         budget: Number(budget),
         skillId,
-        locationLat: Number(locationLat),
-        locationLng: Number(locationLng),
+        locationLat: location.lat,
+        locationLng: location.lng,
       });
       setTitle('');
       setDescription('');
       setBudget('');
-      setLocationLat('');
-      setLocationLng('');
       dispatch(fetchGigs());
     } catch {
       setError('Failed to post gig. Please check your inputs.');
@@ -68,36 +68,22 @@ const GigForm = () => {
         </label>
         <label>
           Skill category
-          <select value={skillId} onChange={(e) => setSkillId(e.target.value)} required>
-            {skills.map((skill) => (
-              <option key={skill.id} value={skill.id}>
-                {skill.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Latitude
-          <input
-            type="number"
-            step="any"
-            value={locationLat}
-            onChange={(e) => setLocationLat(e.target.value)}
-            required
+          <Select
+            value={skillId}
+            onChange={setSkillId}
+            options={skills.map((skill) => ({ value: skill.id, label: skill.name }))}
           />
         </label>
         <label>
-          Longitude
-          <input
-            type="number"
-            step="any"
-            value={locationLng}
-            onChange={(e) => setLocationLng(e.target.value)}
-            required
+          Location
+          <Select
+            value={locationName}
+            onChange={setLocationName}
+            options={KIGALI_LOCATIONS.map((location) => ({ value: location.name, label: location.name }))}
           />
         </label>
         {error && <p className="form-error">{error}</p>}
-        <button type="submit" disabled={submitting || !skillId}>
+        <button type="submit" className="btn-primary" disabled={submitting || !skillId}>
           {submitting ? 'Posting...' : 'Post gig'}
         </button>
       </form>

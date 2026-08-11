@@ -5,5 +5,8 @@ exports.notFound = (req, res) => {
 // eslint-disable-next-line no-unused-vars -- Express requires 4 args to recognize error-handling middleware
 exports.errorHandler = (err, req, res, next) => {
   const status = err.status || 500;
+  if (status >= 500) {
+    console.error(err);
+  }
   res.status(status).json({ message: err.message || 'Internal server error' });
 };

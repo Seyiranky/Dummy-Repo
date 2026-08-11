@@ -2,6 +2,8 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { skillApi } from '../../api/skillApi';
 import { skillTaskApi } from '../../api/skillTaskApi';
+import Select from '../common/Select';
+import { statusBadgeClass } from '../../utils/statusBadge';
 import type { Skill, SkillTask } from '../../types';
 
 const WorkerSubmission = ({ tasks, onSubmitted }: { tasks: SkillTask[]; onSubmitted: () => void }) => {
@@ -41,13 +43,11 @@ const WorkerSubmission = ({ tasks, onSubmitted }: { tasks: SkillTask[]; onSubmit
       <form onSubmit={handleSubmit}>
         <label>
           Skill category
-          <select value={skillId} onChange={(e) => setSkillId(e.target.value)} required>
-            {skills.map((skill) => (
-              <option key={skill.id} value={skill.id}>
-                {skill.name}
-              </option>
-            ))}
-          </select>
+          <Select
+            value={skillId}
+            onChange={setSkillId}
+            options={skills.map((skill) => ({ value: skill.id, label: skill.name }))}
+          />
         </label>
         <label>
           Evidence (link to photo, video, or file)
@@ -64,7 +64,7 @@ const WorkerSubmission = ({ tasks, onSubmitted }: { tasks: SkillTask[]; onSubmit
           <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
         </label>
         {error && <p className="form-error">{error}</p>}
-        <button type="submit" disabled={submitting || !skillId}>
+        <button type="submit" className="btn-primary" disabled={submitting || !skillId}>
           {submitting ? 'Submitting...' : 'Submit for review'}
         </button>
       </form>
@@ -74,10 +74,10 @@ const WorkerSubmission = ({ tasks, onSubmitted }: { tasks: SkillTask[]; onSubmit
       {tasks.map((task) => (
         <div key={task.id} className="card card-row">
           <div>
-            <strong>{task.skill?.name}</strong>
+            <span className="card-title">{task.skill?.name}</span>
             <div className="muted">Reviewer: {task.reviewer?.name ?? 'unassigned'}</div>
           </div>
-          <span className="badge">{task.status}</span>
+          <span className={statusBadgeClass(task.status)}>{task.status}</span>
         </div>
       ))}
     </div>
@@ -108,7 +108,7 @@ const MentorQueue = ({ tasks, onReviewed }: { tasks: SkillTask[]; onReviewed: ()
         <div key={task.id} className="card">
           <div className="card-row">
             <div>
-              <strong>{task.skill?.name}</strong>
+              <span className="card-title">{task.skill?.name}</span>
               <div className="muted">Worker: {task.worker?.name}</div>
             </div>
           </div>
@@ -120,10 +120,20 @@ const MentorQueue = ({ tasks, onReviewed }: { tasks: SkillTask[]; onReviewed: ()
           </p>
           {task.notes && <p className="muted">{task.notes}</p>}
           <div className="card-row">
-            <button type="button" onClick={() => decide(task.id, 'approved')} disabled={busyId === task.id}>
+            <button
+              type="button"
+              className="btn-success"
+              onClick={() => decide(task.id, 'approved')}
+              disabled={busyId === task.id}
+            >
               Approve
             </button>
-            <button type="button" onClick={() => decide(task.id, 'rejected')} disabled={busyId === task.id}>
+            <button
+              type="button"
+              className="btn-danger"
+              onClick={() => decide(task.id, 'rejected')}
+              disabled={busyId === task.id}
+            >
               Reject
             </button>
           </div>
@@ -135,10 +145,10 @@ const MentorQueue = ({ tasks, onReviewed }: { tasks: SkillTask[]; onReviewed: ()
       {decided.map((task) => (
         <div key={task.id} className="card card-row">
           <div>
-            <strong>{task.skill?.name}</strong>
+            <span className="card-title">{task.skill?.name}</span>
             <div className="muted">Worker: {task.worker?.name}</div>
           </div>
-          <span className="badge">{task.status}</span>
+          <span className={statusBadgeClass(task.status)}>{task.status}</span>
         </div>
       ))}
     </div>

@@ -2,13 +2,21 @@ import { useState, type FormEvent } from 'react';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchCurrentUser } from '../../store/slices/authSlice';
 import { userApi } from '../../api/userApi';
+import Select from '../common/Select';
+import { KIGALI_LOCATIONS } from '../../constants/locations';
+
+const findLocationName = (lat?: number | null, lng?: number | null) => {
+  const match = KIGALI_LOCATIONS.find((l) => l.lat === lat && l.lng === lng);
+  return match?.name ?? KIGALI_LOCATIONS[0].name;
+};
 
 const ProfileEditor = () => {
   const dispatch = useAppDispatch();
   const { profile, role } = useAppSelector((state) => state.auth);
   const [bio, setBio] = useState(profile?.bio ?? '');
-  const [locationLat, setLocationLat] = useState(profile?.locationLat?.toString() ?? '');
-  const [locationLng, setLocationLng] = useState(profile?.locationLng?.toString() ?? '');
+  const [locationName, setLocationName] = useState(
+    findLocationName(profile?.locationLat, profile?.locationLng),
+  );
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -17,10 +25,11 @@ const ProfileEditor = () => {
     setSaving(true);
     setSaved(false);
     try {
+      const location = KIGALI_LOCATIONS.find((l) => l.name === locationName) ?? KIGALI_LOCATIONS[0];
       await userApi.updateProfile({
         bio: bio || undefined,
-        locationLat: locationLat ? Number(locationLat) : undefined,
-        locationLng: locationLng ? Number(locationLng) : undefined,
+        locationLat: location.lat,
+        locationLng: location.lng,
       });
       await dispatch(fetchCurrentUser());
       setSaved(true);
@@ -45,30 +54,16 @@ const ProfileEditor = () => {
           <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={2} />
         </label>
         {role === 'worker' && (
-          <>
-            <label>
-              Latitude
-              <input
-                type="number"
-                step="any"
-                value={locationLat}
-                onChange={(e) => setLocationLat(e.target.value)}
-                required
-              />
-            </label>
-            <label>
-              Longitude
-              <input
-                type="number"
-                step="any"
-                value={locationLng}
-                onChange={(e) => setLocationLng(e.target.value)}
-                required
-              />
-            </label>
-          </>
+          <label>
+            Location
+            <Select
+              value={locationName}
+              onChange={setLocationName}
+              options={KIGALI_LOCATIONS.map((location) => ({ value: location.name, label: location.name }))}
+            />
+          </label>
         )}
-        <button type="submit" disabled={saving}>
+        <button type="submit" className="btn-primary" disabled={saving}>
           {saving ? 'Saving...' : 'Save profile'}
         </button>
         {saved && <span className="muted"> Saved.</span>}

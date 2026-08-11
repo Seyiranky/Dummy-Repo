@@ -36,7 +36,7 @@ const LoginForm = () => {
           />
         </label>
         {error && <p className="form-error">{error}</p>}
-        <button type="submit" disabled={status === 'loading'}>
+        <button type="submit" className="btn-primary" disabled={status === 'loading'}>
           {status === 'loading' ? 'Logging in...' : 'Log in'}
         </button>
       </form>

@@ -8,6 +8,10 @@ import DashboardPage from './pages/DashboardPage';
 import MarketplacePage from './pages/MarketplacePage';
 import VerificationPage from './pages/VerificationPage';
 import MentorshipPage from './pages/MentorshipPage';
+import ProfilePage from './pages/ProfilePage';
+import WalletPage from './pages/WalletPage';
+import SettingsPage from './pages/SettingsPage';
+import AdminPage from './pages/AdminPage';
 import { useAppDispatch, useAppSelector } from './store/hooks';
 import { fetchCurrentUser } from './store/slices/authSlice';
 import './App.css';
@@ -33,10 +37,16 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/marketplace" element={<MarketplacePage />} />
+            <Route path="/wallet" element={<WalletPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/profile/:id" element={<ProfilePage />} />
           </Route>
           <Route element={<ProtectedRoute allowedRoles={['worker', 'mentor']} />}>
             <Route path="/verification" element={<VerificationPage />} />
             <Route path="/mentorship" element={<MentorshipPage />} />
+          </Route>
+          <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+            <Route path="/admin" element={<AdminPage />} />
           </Route>
         </Routes>
       </main>

@@ -1,66 +1,177 @@
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --font-body: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --font-heading: 'Plus Jakarta Sans', var(--font-body);
+
+  font-family: var(--font-body);
   line-height: 1.5;
   font-weight: 400;
-
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Isoko Talents "Trust & Growth" palette */
+  --color-bg-page: #f8fafc;
+  --color-bg-surface: #ffffff;
+  --color-text: #334155;
+  --color-text-muted: #64748b;
+  --color-border: #e2e8f0;
+
+  --color-primary: #2563eb;
+  --color-primary-hover: #1e40af;
+  --color-primary-contrast: #ffffff;
+
+  --color-accent: #10b981;
+
+  --color-success: #10b981;
+  --color-success-bg: #ecfdf5;
+  --color-success-text: #047857;
+
+  --color-warning: #f59e0b;
+  --color-warning-bg: #fffbeb;
+  --color-warning-text: #b45309;
+
+  --color-error: #dc2626;
+  --color-error-bg: #fef2f2;
+  --color-error-text: #b91c1c;
+
+  --color-info: #2563eb;
+  --color-info-bg: #eff6ff;
+  --color-info-text: #1d4ed8;
+
+  color: var(--color-text);
+  background-color: var(--color-bg-page);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg-page: #0b1220;
+    --color-bg-surface: #1e293b;
+    --color-text: #e2e8f0;
+    --color-text-muted: #94a3b8;
+    --color-border: #334155;
+
+    --color-primary: #3b82f6;
+    --color-primary-hover: #60a5fa;
+    --color-primary-contrast: #ffffff;
+
+    --color-accent: #34d399;
+
+    --color-success: #34d399;
+    --color-success-bg: rgba(52, 211, 153, 0.15);
+    --color-success-text: #6ee7b7;
+
+    --color-warning: #fbbf24;
+    --color-warning-bg: rgba(251, 191, 36, 0.15);
+    --color-warning-text: #fcd34d;
+
+    --color-error: #f87171;
+    --color-error-bg: rgba(248, 113, 113, 0.15);
+    --color-error-text: #fca5a5;
+
+    --color-info: #60a5fa;
+    --color-info-bg: rgba(96, 165, 250, 0.15);
+    --color-info-text: #93c5fd;
+  }
 }
 
 a {
   font-weight: 500;
-  color: #646cff;
+  color: var(--color-primary);
   text-decoration: inherit;
 }
 a:hover {
-  color: #535bf2;
+  color: var(--color-primary-hover);
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background-color: var(--color-bg-page);
+  color: var(--color-text);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+  font-size: 2rem;
+}
+
+h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
 }
 
 button {
   border-radius: 8px;
-  border: 1px solid transparent;
+  border: 1px solid var(--color-border);
   padding: 0.6em 1.2em;
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: var(--color-bg-surface);
+  color: var(--color-text);
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition:
+    border-color 0.2s,
+    background-color 0.2s,
+    color 0.2s;
 }
 button:hover {
-  border-color: #646cff;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+.btn-primary {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-primary-contrast);
+}
+.btn-primary:hover {
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  color: var(--color-primary-contrast);
+}
+
+.btn-success {
+  background-color: var(--color-success);
+  border-color: var(--color-success);
+  color: #ffffff;
+}
+.btn-success:hover {
+  border-color: var(--color-success);
+  color: #ffffff;
+  opacity: 0.9;
+}
+
+.btn-danger {
+  background: transparent;
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+.btn-danger:hover {
+  background-color: var(--color-error-bg);
+  border-color: var(--color-error);
+  color: var(--color-error);
 }

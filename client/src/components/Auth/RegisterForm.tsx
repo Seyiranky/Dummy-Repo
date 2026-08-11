@@ -2,9 +2,14 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { register } from '../../store/slices/authSlice';
+import Select from '../common/Select';
 import type { Role } from '../../types';
 
 const REGISTERABLE_ROLES: Role[] = ['worker', 'client', 'mentor'];
+const ROLE_OPTIONS = REGISTERABLE_ROLES.map((r) => ({
+  value: r,
+  label: r.charAt(0).toUpperCase() + r.slice(1),
+}));
 
 const RegisterForm = () => {
   const [name, setName] = useState('');
@@ -47,16 +52,10 @@ const RegisterForm = () => {
         </label>
         <label>
           I am a...
-          <select value={role} onChange={(e) => setRole(e.target.value as Role)}>
-            {REGISTERABLE_ROLES.map((r) => (
-              <option key={r} value={r}>
-                {r.charAt(0).toUpperCase() + r.slice(1)}
-              </option>
-            ))}
-          </select>
+          <Select value={role} onChange={(v) => setRole(v as Role)} options={ROLE_OPTIONS} />
         </label>
         {error && <p className="form-error">{error}</p>}
-        <button type="submit" disabled={status === 'loading'}>
+        <button type="submit" className="btn-primary" disabled={status === 'loading'}>
           {status === 'loading' ? 'Creating account...' : 'Register'}
         </button>
       </form>

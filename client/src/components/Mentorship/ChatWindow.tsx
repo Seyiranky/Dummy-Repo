@@ -93,7 +93,7 @@ const ChatWindow = () => {
               onChange={(e) => setDraft(e.target.value)}
               placeholder={`Message ${selected?.name ?? ''}`}
             />
-            <button type="submit" disabled={sending || !draft.trim()}>
+            <button type="submit" className="btn-primary" disabled={sending || !draft.trim()}>
               Send
             </button>
           </form>

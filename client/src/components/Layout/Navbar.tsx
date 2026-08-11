@@ -23,6 +23,9 @@ const Navbar = () => {
           <Link to="/marketplace">Marketplace</Link>
           {(role === 'worker' || role === 'mentor') && <Link to="/verification">Verification</Link>}
           {(role === 'worker' || role === 'mentor') && <Link to="/mentorship">Mentorship</Link>}
+          {(role === 'worker' || role === 'client') && <Link to="/wallet">Wallet</Link>}
+          <Link to="/settings">Settings</Link>
+          {role === 'admin' && <Link to="/admin">Admin</Link>}
           <span className="navbar-user">
             {profile?.name ?? '...'} ({role})
           </span>

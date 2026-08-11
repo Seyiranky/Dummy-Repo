@@ -1,4 +1,4 @@
-const { Match, Gig, Transaction } = require('../models');
+const { Match, Gig, Transaction, User } = require('../models');
 const paymentService = require('../services/paymentService');
 
 const isPartyToMatch = (match, userId) => match.workerId === userId || match.gig.clientId === userId;
@@ -46,7 +46,10 @@ exports.listTransactions = async (req, res) => {
       {
         model: Match,
         as: 'match',
-        include: [{ model: Gig, as: 'gig' }],
+        include: [
+          { model: Gig, as: 'gig', include: [{ model: User, as: 'client' }] },
+          { model: User, as: 'worker' },
+        ],
       },
     ],
     order: [['createdAt', 'DESC']],

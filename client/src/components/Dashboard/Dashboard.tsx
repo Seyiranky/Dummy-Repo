@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchMatches } from '../../store/slices/matchSlice';
 import { skillTaskApi } from '../../api/skillTaskApi';
-import ProfileEditor from './ProfileEditor';
+import { statusBadgeClass } from '../../utils/statusBadge';
 import type { SkillTask } from '../../types';
 
 const Dashboard = () => {
@@ -32,16 +32,29 @@ const Dashboard = () => {
   }
 
   const pendingReviews = tasks.filter((t) => t.status === 'pending');
+  const needsLocation = role === 'worker' && (profile.locationLat == null || profile.locationLng == null);
 
   return (
     <div>
       <div className="section">
         <h1>Welcome, {profile.name}</h1>
-        <p className="card-row">
+        <div className="card-row">
           <span className="badge">{profile.role}</span>
-          <span>Trust score: {profile.trustScore.toFixed(1)} / 5</span>
-        </p>
+          <div className="trust-score-stat">
+            <span className="muted">Trust score</span>
+            <span className="trust-score">{profile.trustScore.toFixed(1)} / 5</span>
+          </div>
+        </div>
       </div>
+
+      {needsLocation && (
+        <div className="section">
+          <p className="form-error">
+            Set your location in <Link to="/settings">Settings</Link> so clients can find you in nearby
+            gig matches.
+          </p>
+        </div>
+      )}
 
       {role === 'client' && (
         <div className="section">
@@ -77,22 +90,29 @@ const Dashboard = () => {
         </div>
       )}
 
-      <ProfileEditor />
-
       <div className="section">
         <h2>Your matches</h2>
         {matches.length === 0 && <p className="muted">No matches yet.</p>}
-        {matches.map((match) => (
-          <div key={match.id} className="card card-row">
-            <div>
-              <strong>{match.gig?.title ?? 'Gig'}</strong>
-              <div className="muted">
-                {role === 'client' ? match.worker?.name : match.gig?.client?.name}
+        {matches.map((match) => {
+          const counterparty = role === 'client' ? match.worker : match.gig?.client;
+          return (
+            <div key={match.id} className="card card-row">
+              <div>
+                <span className="card-title">{match.gig?.title ?? 'Gig'}</span>
+                <div className="muted">
+                  {counterparty ? (
+                    <Link to={`/profile/${counterparty.id}`} className="link-reset">
+                      {counterparty.name}
+                    </Link>
+                  ) : (
+                    'Unknown'
+                  )}
+                </div>
               </div>
+              <span className={statusBadgeClass(match.status)}>{match.status}</span>
             </div>
-            <span className="badge">{match.status}</span>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

@@ -10,6 +10,7 @@ export interface User {
   locationLat?: number | null;
   locationLng?: number | null;
   trustScore: number;
+  createdAt?: string;
 }
 
 export interface Skill {
@@ -86,6 +87,7 @@ export interface Transaction {
   provider: string;
   reference: string;
   createdAt: string;
+  match?: Match;
 }
 
 export interface Review {
@@ -96,6 +98,25 @@ export interface Review {
   rating: number;
   comment?: string | null;
   createdAt: string;
+  author?: User;
+}
+
+export interface PublicProfile {
+  id: string;
+  name: string;
+  role: Role;
+  bio?: string | null;
+  trustScore: number;
+  createdAt: string;
+}
+
+export interface UserSkill {
+  id: string;
+  userId: string;
+  skillId: string;
+  proficiencyLevel: number;
+  verificationStatus: 'unverified' | 'pending' | 'verified';
+  skill?: Skill;
 }
 
 export interface Message {

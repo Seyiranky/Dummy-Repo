@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchMatches } from '../../store/slices/matchSlice';
 import { matchApi } from '../../api/matchApi';
 import { transactionApi } from '../../api/transactionApi';
 import { reviewApi } from '../../api/reviewApi';
+import Select from '../common/Select';
+import { statusBadgeClass } from '../../utils/statusBadge';
 import type { Match, MatchStatus } from '../../types';
+
+const RATING_OPTIONS = [5, 4, 3, 2, 1].map((n) => ({ value: String(n), label: String(n) }));
 
 const ReviewForm = ({ match, onSubmitted }: { match: Match; onSubmitted: () => void }) => {
   const [rating, setRating] = useState(5);
@@ -25,16 +30,10 @@ const ReviewForm = ({ match, onSubmitted }: { match: Match; onSubmitted: () => v
     <div className="card-row">
       <label>
         Rating
-        <select value={rating} onChange={(e) => setRating(Number(e.target.value))}>
-          {[5, 4, 3, 2, 1].map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </select>
+        <Select value={String(rating)} onChange={(v) => setRating(Number(v))} options={RATING_OPTIONS} />
       </label>
       <input placeholder="Comment (optional)" value={comment} onChange={(e) => setComment(e.target.value)} />
-      <button type="button" onClick={handleSubmit} disabled={submitting}>
+      <button type="button" className="btn-primary" onClick={handleSubmit} disabled={submitting}>
         {submitting ? 'Submitting...' : 'Leave review'}
       </button>
     </div>
@@ -82,25 +81,44 @@ const MatchList = () => {
       {matches.length === 0 && <p className="muted">No matches yet — post or get matched to a gig first.</p>}
       {matches.map((match) => {
         const alreadyReviewed = match.reviews?.some((r) => r.authorId === profile.id);
+        const counterparty = isWorker ? match.gig?.client : match.worker;
         return (
           <div key={match.id} className="card">
             <div className="card-row">
               <div>
-                <strong>{match.gig?.title ?? 'Gig'}</strong>
-                <div className="muted">{isWorker ? match.gig?.client?.name : match.worker?.name}</div>
+                <span className="card-title">{match.gig?.title ?? 'Gig'}</span>
+                <div className="muted">
+                  {counterparty ? (
+                    <Link to={`/profile/${counterparty.id}`} className="link-reset">
+                      {counterparty.name}
+                    </Link>
+                  ) : (
+                    'Unknown'
+                  )}
+                </div>
               </div>
-              <span className="badge">{match.status}</span>
+              <span className={statusBadgeClass(match.status)}>{match.status}</span>
             </div>
 
             {match.status === 'pending' && isWorker && (
-              <button type="button" onClick={() => transition(match.id, 'accepted')} disabled={busyId === match.id}>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => transition(match.id, 'accepted')}
+                disabled={busyId === match.id}
+              >
                 Accept
               </button>
             )}
             {match.status === 'pending' && !isWorker && <p className="muted">Waiting for worker to accept.</p>}
 
             {match.status === 'accepted' && (
-              <button type="button" onClick={() => transition(match.id, 'completed')} disabled={busyId === match.id}>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => transition(match.id, 'completed')}
+                disabled={busyId === match.id}
+              >
                 Mark completed
               </button>
             )}
@@ -108,11 +126,13 @@ const MatchList = () => {
             {match.status === 'completed' && match.transaction && (
               <div>
                 <p className="muted">
-                  Payment ({match.transaction.provider}): {match.transaction.status}
+                  Payment ({match.transaction.provider}):{' '}
+                  <span className={statusBadgeClass(match.transaction.status)}>{match.transaction.status}</span>
                 </p>
                 {match.transaction.status === 'initiated' && (
                   <button
                     type="button"
+                    className="btn-primary"
                     onClick={() => confirmPayment(match.transaction!.id)}
                     disabled={busyId === match.transaction.id}
                   >

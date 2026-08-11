@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchGigs } from '../../store/slices/gigSlice';
 import { fetchMatches } from '../../store/slices/matchSlice';
 import { gigApi } from '../../api/gigApi';
 import { matchApi } from '../../api/matchApi';
+import { statusBadgeClass } from '../../utils/statusBadge';
 import type { Candidate, Gig } from '../../types';
 
 const CandidateList = ({ gig, onMatched }: { gig: Gig; onMatched: () => void }) => {
@@ -46,9 +48,17 @@ const CandidateList = ({ gig, onMatched }: { gig: Gig; onMatched: () => void }) 
       {candidates.map((candidate) => (
         <div key={candidate.workerId} className="card-row">
           <span>
-            {candidate.name} — trust {candidate.trustScore.toFixed(1)}, {candidate.distanceKm} km away
+            <Link to={`/profile/${candidate.workerId}`} className="link-reset">
+              {candidate.name}
+            </Link>{' '}
+            — trust {candidate.trustScore.toFixed(1)}, {candidate.distanceKm} km away
           </span>
-          <button type="button" onClick={() => handleMatch(candidate.workerId)} disabled={matching !== null}>
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => handleMatch(candidate.workerId)}
+            disabled={matching !== null}
+          >
             {matching === candidate.workerId ? 'Matching...' : 'Match'}
           </button>
         </div>
@@ -84,10 +94,10 @@ const GigFeed = () => {
         <div key={gig.id} className="card">
           <div className="card-row">
             <div>
-              <strong>{gig.title}</strong>
+              <span className="card-title">{gig.title}</span>
               <div className="muted">{gig.skill?.name}</div>
             </div>
-            <span className="badge">{gig.status}</span>
+            <span className={statusBadgeClass(gig.status)}>{gig.status}</span>
           </div>
           <p>{gig.description}</p>
           <p className="muted">Budget: {gig.budget} RWF</p>

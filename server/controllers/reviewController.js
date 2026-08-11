@@ -1,4 +1,4 @@
-const { Review, Match, Gig } = require('../models');
+const { Review, Match, Gig, User } = require('../models');
 const trustScoreService = require('../services/trustScoreService');
 
 exports.createReview = async (req, res) => {
@@ -46,6 +46,10 @@ exports.createReview = async (req, res) => {
 
 exports.listReviews = async (req, res) => {
   const where = req.query.recipientId ? { recipientId: req.query.recipientId } : undefined;
-  const reviews = await Review.findAll({ where, order: [['createdAt', 'DESC']] });
+  const reviews = await Review.findAll({
+    where,
+    include: [{ model: User, as: 'author' }],
+    order: [['createdAt', 'DESC']],
+  });
   res.json(reviews);
 };
