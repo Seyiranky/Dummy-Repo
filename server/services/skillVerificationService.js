@@ -2,8 +2,8 @@ const { Op, fn, col } = require('sequelize');
 const { User, SkillTask } = require('../models');
 
 exports.assignReviewer = async (workerId) => {
-  const mentors = await User.findAll({ where: { role: 'mentor' } });
-  if (mentors.length === 0) {
+  const admins = await User.findAll({ where: { role: 'admin' } });
+  if (admins.length === 0) {
     return null;
   }
 
@@ -13,14 +13,14 @@ exports.assignReviewer = async (workerId) => {
     group: ['reviewerId'],
     raw: true,
   });
-  const countByMentor = new Map(pendingCounts.map((row) => [row.reviewerId, Number(row.pendingCount)]));
+  const countByAdmin = new Map(pendingCounts.map((row) => [row.reviewerId, Number(row.pendingCount)]));
 
-  const eligible = mentors.filter((mentor) => mentor.id !== workerId);
+  const eligible = admins.filter((admin) => admin.id !== workerId);
   if (eligible.length === 0) {
     return null;
   }
 
-  const loads = eligible.map((mentor) => countByMentor.get(mentor.id) || 0);
+  const loads = eligible.map((admin) => countByAdmin.get(admin.id) || 0);
   const minLoad = Math.min(...loads);
   const leastBusy = eligible.filter((_, i) => loads[i] === minLoad);
 

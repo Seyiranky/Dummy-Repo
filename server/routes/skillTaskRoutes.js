@@ -6,6 +6,6 @@ const { authorize } = require('../middleware/roleMiddleware');
 
 router.post('/', verifyToken, authorize('worker'), skillTaskController.submitTask);
 router.get('/', verifyToken, skillTaskController.listTasks);
-router.put('/:id/review', verifyToken, authorize('mentor'), skillTaskController.reviewTask);
+router.put('/:id/review', verifyToken, authorize('admin'), skillTaskController.reviewTask);
 
 module.exports = router;

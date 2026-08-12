@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { login } from '../../store/slices/authSlice';
+import GoogleLoginButton from './GoogleLoginButton';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -20,7 +21,8 @@ const LoginForm = () => {
 
   return (
     <div className="auth-form">
-      <h1>Log in</h1>
+      <h1>Welcome back</h1>
+      <p className="auth-form-subtitle">Log in to manage your gigs, matches, and payments.</p>
       <form onSubmit={handleSubmit}>
         <label>
           Email
@@ -40,7 +42,13 @@ const LoginForm = () => {
           {status === 'loading' ? 'Logging in...' : 'Log in'}
         </button>
       </form>
-      <p>
+
+      <div className="auth-divider">
+        <span>or</span>
+      </div>
+      <GoogleLoginButton />
+
+      <p className="auth-form-footer">
         No account? <Link to="/register">Register</Link>
       </p>
     </div>

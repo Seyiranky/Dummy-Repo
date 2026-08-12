@@ -7,6 +7,7 @@ module.exports = (sequelize, DataTypes) => {
       Gig.belongsTo(models.User, { foreignKey: 'clientId', as: 'client' });
       Gig.belongsTo(models.Skill, { foreignKey: 'skillId', as: 'skill' });
       Gig.hasMany(models.Match, { foreignKey: 'gigId', as: 'matches' });
+      Gig.hasMany(models.GigApplication, { foreignKey: 'gigId', as: 'applications' });
     }
   }
   Gig.init(
@@ -47,8 +48,8 @@ module.exports = (sequelize, DataTypes) => {
       status: {
         type: DataTypes.STRING,
         allowNull: false,
-        defaultValue: 'open',
-        validate: { isIn: [['open', 'matched', 'completed', 'cancelled']] },
+        defaultValue: 'pending_review',
+        validate: { isIn: [['pending_review', 'open', 'matched', 'completed', 'cancelled', 'rejected']] },
       },
     },
     {

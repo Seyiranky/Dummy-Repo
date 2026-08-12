@@ -8,10 +8,12 @@ const userRoutes = require('./routes/userRoutes');
 const skillRoutes = require('./routes/skillRoutes');
 const skillTaskRoutes = require('./routes/skillTaskRoutes');
 const gigRoutes = require('./routes/gigRoutes');
+const gigApplicationRoutes = require('./routes/gigApplicationRoutes');
 const matchRoutes = require('./routes/matchRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const messageRoutes = require('./routes/messageRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
@@ -28,10 +30,12 @@ app.use('/api/users', userRoutes);
 app.use('/api/skills', skillRoutes);
 app.use('/api/skill-tasks', skillTaskRoutes);
 app.use('/api/gigs', gigRoutes);
+app.use('/api/gig-applications', gigApplicationRoutes);
 app.use('/api/matches', matchRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
 
 app.use(notFound);

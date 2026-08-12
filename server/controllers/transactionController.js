@@ -1,4 +1,4 @@
-const { Match, Gig, Transaction, User } = require('../models');
+const { Match, Gig, Transaction, User, Notification } = require('../models');
 const paymentService = require('../services/paymentService');
 
 const isPartyToMatch = (match, userId) => match.workerId === userId || match.gig.clientId === userId;
@@ -37,6 +37,13 @@ exports.confirmTransaction = async (req, res) => {
   }
 
   const confirmed = await paymentService.confirm(transaction.id);
+
+  await Notification.create({
+    userId: transaction.match.workerId,
+    title: 'Payment confirmed',
+    body: `Payment for "${transaction.match.gig.title}" was confirmed (${confirmed.amount} RWF).`,
+  });
+
   res.json(confirmed);
 };
 

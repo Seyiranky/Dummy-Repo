@@ -3,13 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { register } from '../../store/slices/authSlice';
 import Select from '../common/Select';
+import { ROLE_OPTIONS } from '../../constants/roles';
 import type { Role } from '../../types';
-
-const REGISTERABLE_ROLES: Role[] = ['worker', 'client', 'mentor'];
-const ROLE_OPTIONS = REGISTERABLE_ROLES.map((r) => ({
-  value: r,
-  label: r.charAt(0).toUpperCase() + r.slice(1),
-}));
 
 const RegisterForm = () => {
   const [name, setName] = useState('');
@@ -30,7 +25,8 @@ const RegisterForm = () => {
 
   return (
     <div className="auth-form">
-      <h1>Create an account</h1>
+      <h1>Create your account</h1>
+      <p className="auth-form-subtitle">Join Isoko Talents as a worker or a client.</p>
       <form onSubmit={handleSubmit}>
         <label>
           Name
@@ -59,7 +55,7 @@ const RegisterForm = () => {
           {status === 'loading' ? 'Creating account...' : 'Register'}
         </button>
       </form>
-      <p>
+      <p className="auth-form-footer">
         Already have an account? <Link to="/login">Log in</Link>
       </p>
     </div>

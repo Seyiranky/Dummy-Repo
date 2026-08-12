@@ -5,12 +5,12 @@ import SkillThumbnail from '../common/SkillThumbnail';
 import { statusBadgeClass } from '../../utils/statusBadge';
 import type { SkillTask } from '../../types';
 
-interface MentorReviewQueueProps {
+interface AdminReviewQueueProps {
   tasks: SkillTask[];
   onReviewed: () => void;
 }
 
-const MentorReviewQueue = ({ tasks, onReviewed }: MentorReviewQueueProps) => {
+const AdminReviewQueue = ({ tasks, onReviewed }: AdminReviewQueueProps) => {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const decide = async (taskId: string, decision: 'approved' | 'rejected') => {
@@ -87,4 +87,4 @@ const MentorReviewQueue = ({ tasks, onReviewed }: MentorReviewQueueProps) => {
   );
 };
 
-export default MentorReviewQueue;
+export default AdminReviewQueue;

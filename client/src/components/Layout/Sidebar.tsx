@@ -1,14 +1,26 @@
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { logout } from '../../store/slices/authSlice';
+import { notificationApi } from '../../api/notificationApi';
 import Avatar from '../common/Avatar';
+import { AdminIcon, DashboardIcon, LogoutIcon, MarketplaceIcon, NotificationsIcon } from '../common/icons';
+import logo from '../../assets/logo.png';
 
 const navLinkClassName = ({ isActive }: { isActive: boolean }) => (isActive ? 'active' : undefined);
 
 const Sidebar = () => {
-  const { token, role, profile } = useAppSelector((state) => state.auth);
+  const { role, profile } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    notificationApi.listNotifications().then((notifications) => {
+      setUnreadCount(notifications.filter((n) => !n.readAt).length);
+    });
+  }, [role, location.pathname]);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -18,42 +30,56 @@ const Sidebar = () => {
   return (
     <aside className="sidebar">
       <Link to="/" className="sidebar-brand">
-        Isoko Talents
+        <span className="sidebar-logo-wrap">
+          <img src={logo} alt="Isoko Talents" className="sidebar-logo" />
+        </span>
       </Link>
-      {token && (
-        <>
-          <nav className="sidebar-links">
-            <NavLink to="/dashboard" className={navLinkClassName}>
-              Dashboard
-            </NavLink>
-            <NavLink to="/marketplace" className={navLinkClassName}>
-              Marketplace
-            </NavLink>
-            {(role === 'worker' || role === 'mentor') && (
-              <NavLink to="/mentorship" className={navLinkClassName}>
-                Mentorship
-              </NavLink>
-            )}
-            {role === 'admin' && (
-              <NavLink to="/admin" className={navLinkClassName}>
-                Admin
-              </NavLink>
-            )}
-          </nav>
 
-          <div className="sidebar-footer">
-            <Link to="/dashboard" className="identity link-reset">
-              <Avatar name={profile?.name ?? '?'} size={28} />
-              <span className="sidebar-user">
-                {profile?.name ?? '...'} ({role})
-              </span>
-            </Link>
-            <button type="button" onClick={handleLogout}>
-              Log out
-            </button>
-          </div>
-        </>
-      )}
+      <nav className="sidebar-links">
+        <NavLink to="/dashboard" className={navLinkClassName} title="Dashboard">
+          <span className="sidebar-link-label">
+            <DashboardIcon />
+            <span className="sidebar-link-text">Dashboard</span>
+          </span>
+        </NavLink>
+        <NavLink to="/marketplace" className={navLinkClassName} title="Marketplace">
+          <span className="sidebar-link-label">
+            <MarketplaceIcon />
+            <span className="sidebar-link-text">Marketplace</span>
+          </span>
+        </NavLink>
+        <NavLink to="/notifications" className={navLinkClassName} title="Notifications">
+          <span className="sidebar-link-label">
+            <span className="sidebar-icon-wrap">
+              <NotificationsIcon />
+              {unreadCount > 0 && <span className="sidebar-dot" aria-hidden="true" />}
+            </span>
+            <span className="sidebar-link-text">Notifications</span>
+          </span>
+          {unreadCount > 0 && <span className="sidebar-badge">{unreadCount}</span>}
+        </NavLink>
+        {role === 'admin' && (
+          <NavLink to="/admin" className={navLinkClassName} title="Admin">
+            <span className="sidebar-link-label">
+              <AdminIcon />
+              <span className="sidebar-link-text">Admin</span>
+            </span>
+          </NavLink>
+        )}
+      </nav>
+
+      <div className="sidebar-footer">
+        <Link to="/dashboard" className="identity link-reset" title={profile?.name}>
+          <Avatar name={profile?.name ?? '?'} size={28} />
+          <span className="sidebar-user">
+            {profile?.name ?? '...'} ({role})
+          </span>
+        </Link>
+        <button type="button" className="sidebar-logout" onClick={handleLogout} title="Log out">
+          <LogoutIcon />
+          <span className="sidebar-link-text">Log out</span>
+        </button>
+      </div>
     </aside>
   );
 };

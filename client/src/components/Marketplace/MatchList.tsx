@@ -109,18 +109,6 @@ const MatchList = () => {
               )}
 
               <div className="match-card-footer">
-                {match.status === 'pending' && isWorker && (
-                  <button
-                    type="button"
-                    className="btn-primary"
-                    onClick={() => transition(match.id, 'accepted')}
-                    disabled={busyId === match.id}
-                  >
-                    Accept
-                  </button>
-                )}
-                {match.status === 'pending' && !isWorker && <p className="muted">Waiting for worker to accept.</p>}
-
                 {match.status === 'accepted' && (
                   <button
                     type="button"

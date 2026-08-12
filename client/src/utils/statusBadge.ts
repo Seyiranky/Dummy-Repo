@@ -1,5 +1,5 @@
 const SUCCESS_STATUSES = new Set(['completed', 'approved', 'confirmed']);
-const WARNING_STATUSES = new Set(['pending', 'initiated']);
+const WARNING_STATUSES = new Set(['pending', 'initiated', 'pending_review']);
 const ERROR_STATUSES = new Set(['rejected', 'cancelled', 'failed']);
 const INFO_STATUSES = new Set(['open', 'accepted', 'matched']);
 

@@ -1,5 +1,5 @@
 import axiosClient from './axiosClient';
-import type { Candidate, Gig, GigStatus } from '../types';
+import type { Gig, GigStatus } from '../types';
 
 export interface CreateGigPayload {
   title: string;
@@ -19,9 +19,6 @@ export const gigApi = {
 
   getGig: (id: string) => axiosClient.get<Gig>(`/gigs/${id}`).then((res) => res.data),
 
-  getCandidates: (gigId: string) =>
-    axiosClient.get<Candidate[]>(`/gigs/${gigId}/candidates`).then((res) => res.data),
-
-  updateGig: (id: string, payload: Partial<CreateGigPayload & { status: GigStatus }>) =>
+  updateGig: (id: string, payload: Partial<CreateGigPayload>) =>
     axiosClient.put<Gig>(`/gigs/${id}`, payload).then((res) => res.data),
 };

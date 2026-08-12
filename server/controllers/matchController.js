@@ -8,34 +8,6 @@ const MATCH_INCLUDES = [
   { model: Review, as: 'reviews' },
 ];
 
-exports.createMatch = async (req, res) => {
-  const { gigId, workerId } = req.body;
-  if (!gigId || !workerId) {
-    return res.status(400).json({ message: 'gigId and workerId are required' });
-  }
-
-  const gig = await Gig.findByPk(gigId);
-  if (!gig) {
-    return res.status(404).json({ message: 'Gig not found' });
-  }
-  if (gig.clientId !== req.user.id) {
-    return res.status(403).json({ message: 'Only the posting client may create a match for this gig' });
-  }
-  if (gig.status !== 'open') {
-    return res.status(409).json({ message: `Gig is not open (current status: ${gig.status})` });
-  }
-
-  const worker = await User.findOne({ where: { id: workerId, role: 'worker' } });
-  if (!worker) {
-    return res.status(404).json({ message: 'Worker not found' });
-  }
-
-  const match = await Match.create({ gigId, workerId, status: 'pending' });
-  await gig.update({ status: 'matched' });
-
-  res.status(201).json(match);
-};
-
 exports.listMatches = async (req, res) => {
   let matches;
   if (req.user.role === 'worker') {

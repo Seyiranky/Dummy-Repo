@@ -1,90 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchGigs } from '../../store/slices/gigSlice';
-import { fetchMatches } from '../../store/slices/matchSlice';
-import { gigApi } from '../../api/gigApi';
-import { matchApi } from '../../api/matchApi';
 import { statusBadgeClass } from '../../utils/statusBadge';
-import IdentityLink from '../common/IdentityLink';
 import SkillThumbnail from '../common/SkillThumbnail';
-import Modal from '../common/Modal';
-import type { Candidate, Gig } from '../../types';
-
-const CandidatesModal = ({
-  gig,
-  onClose,
-  onMatched,
-}: {
-  gig: Gig;
-  onClose: () => void;
-  onMatched: () => void;
-}) => {
-  const [candidates, setCandidates] = useState<Candidate[] | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [matching, setMatching] = useState<string | null>(null);
-
-  useEffect(() => {
-    gigApi
-      .getCandidates(gig.id)
-      .then(setCandidates)
-      .finally(() => setLoading(false));
-  }, [gig.id]);
-
-  const handleMatch = async (workerId: string) => {
-    setMatching(workerId);
-    try {
-      await matchApi.createMatch({ gigId: gig.id, workerId });
-      onMatched();
-      onClose();
-    } finally {
-      setMatching(null);
-    }
-  };
-
-  return (
-    <Modal title={`Candidates for "${gig.title}"`} onClose={onClose}>
-      {loading && <p className="muted">Finding candidates...</p>}
-      {!loading && candidates?.length === 0 && (
-        <p className="muted">No verified workers nearby for this skill yet.</p>
-      )}
-      {!loading &&
-        candidates?.map((candidate) => (
-          <div key={candidate.workerId} className="card card-row candidate-row">
-            <div className="identity">
-              <IdentityLink id={candidate.workerId} name={candidate.name} size={28} />
-              <span className="muted">
-                trust {candidate.trustScore.toFixed(1)}, {candidate.distanceKm} km away
-              </span>
-            </div>
-            <button
-              type="button"
-              className="btn-primary"
-              onClick={() => handleMatch(candidate.workerId)}
-              disabled={matching !== null}
-            >
-              {matching === candidate.workerId ? 'Matching...' : 'Match'}
-            </button>
-          </div>
-        ))}
-    </Modal>
-  );
-};
 
 const GigFeed = () => {
   const dispatch = useAppDispatch();
   const { role, profile } = useAppSelector((state) => state.auth);
   const gigs = useAppSelector((state) => state.gigs.items);
   const status = useAppSelector((state) => state.gigs.status);
-  const [candidateGig, setCandidateGig] = useState<Gig | null>(null);
 
   useEffect(() => {
     dispatch(fetchGigs());
   }, [dispatch]);
-
-  const refresh = () => {
-    dispatch(fetchGigs());
-    dispatch(fetchMatches());
-  };
 
   const visibleGigs =
     role === 'client' && profile
@@ -109,20 +38,13 @@ const GigFeed = () => {
             <div className="gig-card-footer">
               <div className="card-row">
                 <span className="muted">Budget: {gig.budget} RWF</span>
-                <span className={statusBadgeClass(gig.status)}>{gig.status}</span>
+                <span className={statusBadgeClass(gig.status)}>{gig.status.replace('_', ' ')}</span>
               </div>
-              {role === 'client' && gig.status === 'open' && (
-                <button type="button" onClick={() => setCandidateGig(gig)}>
-                  View ranked candidates
-                </button>
-              )}
+              <Link to={`/gigs/${gig.id}`}>View details</Link>
             </div>
           </div>
         ))}
       </div>
-      {candidateGig && (
-        <CandidatesModal gig={candidateGig} onClose={() => setCandidateGig(null)} onMatched={refresh} />
-      )}
     </div>
   );
 };

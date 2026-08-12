@@ -1,4 +1,4 @@
-const { SkillTask, UserSkill, Skill, User } = require('../models');
+const { SkillTask, UserSkill, Skill, User, Notification } = require('../models');
 const { assignReviewer } = require('../services/skillVerificationService');
 
 exports.submitTask = async (req, res) => {
@@ -14,7 +14,7 @@ exports.submitTask = async (req, res) => {
 
   const reviewer = await assignReviewer(req.user.id);
   if (!reviewer) {
-    return res.status(503).json({ message: 'No mentor is available to review this task right now' });
+    return res.status(503).json({ message: 'No admin is available to review this task right now' });
   }
 
   const task = await SkillTask.create({
@@ -26,6 +26,13 @@ exports.submitTask = async (req, res) => {
     status: 'pending',
   });
 
+  const worker = await User.findByPk(req.user.id);
+  await Notification.create({
+    userId: reviewer.id,
+    title: 'New skill verification request',
+    body: `${worker.name} submitted evidence for ${skill.name} and needs your review.`,
+  });
+
   res.status(201).json(task);
 };
 
@@ -35,7 +42,7 @@ exports.reviewTask = async (req, res) => {
     return res.status(400).json({ message: "decision must be 'approved' or 'rejected'" });
   }
 
-  const task = await SkillTask.findByPk(req.params.id);
+  const task = await SkillTask.findByPk(req.params.id, { include: [{ model: Skill, as: 'skill' }] });
   if (!task) {
     return res.status(404).json({ message: 'Skill task not found' });
   }
@@ -62,16 +69,25 @@ exports.reviewTask = async (req, res) => {
     }
   }
 
+  await Notification.create({
+    userId: task.workerId,
+    title: decision === 'approved' ? 'Skill verified' : 'Skill submission rejected',
+    body:
+      decision === 'approved'
+        ? `Your submission for ${task.skill.name} was approved. It now shows as a verified skill.`
+        : `Your submission for ${task.skill.name} was rejected. You can submit new evidence any time.`,
+  });
+
   res.json(task);
 };
 
 exports.listTasks = async (req, res) => {
   const where =
-    req.user.role === 'mentor'
-      ? { reviewerId: req.user.id }
-      : req.user.role === 'admin'
-        ? {}
-        : { workerId: req.user.id };
+    req.user.role === 'admin'
+      ? req.query.assignedToMe === 'true'
+        ? { reviewerId: req.user.id }
+        : {}
+      : { workerId: req.user.id };
 
   const tasks = await SkillTask.findAll({
     where,

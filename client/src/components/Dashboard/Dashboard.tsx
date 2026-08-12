@@ -5,6 +5,7 @@ import { fetchMatches } from '../../store/slices/matchSlice';
 import { skillTaskApi } from '../../api/skillTaskApi';
 import { transactionApi } from '../../api/transactionApi';
 import { userApi } from '../../api/userApi';
+import { adminApi } from '../../api/adminApi';
 import { statusBadgeClass } from '../../utils/statusBadge';
 import Avatar from '../common/Avatar';
 import IdentityLink from '../common/IdentityLink';
@@ -16,8 +17,9 @@ import WalletSummary from '../Wallet/WalletSummary';
 import ProfileEditor from '../Settings/ProfileEditor';
 import ExportDataButton from '../Settings/ExportDataButton';
 import SkillVerificationForm from '../Verification/SkillVerificationForm';
-import MentorReviewQueue from '../Verification/MentorReviewQueue';
-import type { SkillTask, Transaction, UserSkill } from '../../types';
+import AdminReviewQueue from '../Verification/AdminReviewQueue';
+import GigApprovalQueue from '../Admin/GigApprovalQueue';
+import type { Gig, SkillTask, Transaction, UserSkill } from '../../types';
 
 const Dashboard = () => {
   const dispatch = useAppDispatch();
@@ -28,8 +30,11 @@ const Dashboard = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
   const [verifiedSkills, setVerifiedSkills] = useState<UserSkill[]>([]);
+  const [gigs, setGigs] = useState<Gig[]>([]);
+  const [gigsLoading, setGigsLoading] = useState(false);
   const [showSkillModal, setShowSkillModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [showGigModal, setShowGigModal] = useState(false);
 
   useEffect(() => {
     dispatch(fetchMatches());
@@ -38,15 +43,16 @@ const Dashboard = () => {
   const refreshTasks = () => {
     setTasksLoading(true);
     skillTaskApi
-      .listTasks()
+      .listTasks(role === 'admin' ? { assignedToMe: true } : undefined)
       .then(setTasks)
       .finally(() => setTasksLoading(false));
   };
 
   useEffect(() => {
-    if (role === 'worker' || role === 'mentor') {
+    if (role === 'worker' || role === 'admin') {
       refreshTasks();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role]);
 
   useEffect(() => {
@@ -65,12 +71,25 @@ const Dashboard = () => {
     }
   }, [role, profile]);
 
+  const refreshGigs = () => {
+    setGigsLoading(true);
+    adminApi
+      .listGigs()
+      .then(setGigs)
+      .finally(() => setGigsLoading(false));
+  };
+
+  useEffect(() => {
+    if (role === 'admin') refreshGigs();
+  }, [role]);
+
   if (!profile) {
     return <p>Loading your profile...</p>;
   }
 
   const pendingReviews = tasks.filter((t) => t.status === 'pending');
   const decidedReviews = tasks.filter((t) => t.status !== 'pending');
+  const pendingGigs = gigs.filter((g) => g.status === 'pending_review');
   const needsLocation = role === 'worker' && (profile.locationLat == null || profile.locationLng == null);
   const activeMatches = matches.filter((m) => m.status === 'pending' || m.status === 'accepted').length;
   const confirmedTotal = transactions
@@ -107,10 +126,11 @@ const Dashboard = () => {
             <StatCard label="Active matches" value={activeMatches} />
           </>
         )}
-        {role === 'mentor' && (
+        {role === 'admin' && (
           <>
             <StatCard label="Pending reviews" value={pendingReviews.length} />
             <StatCard label="Reviews completed" value={decidedReviews.length} />
+            <StatCard label="Pending gig approvals" value={pendingGigs.length} />
           </>
         )}
       </div>
@@ -137,7 +157,7 @@ const Dashboard = () => {
         </div>
       )}
 
-      {role === 'mentor' && !tasksLoading && pendingReviews.length > 0 && (
+      {role === 'admin' && !tasksLoading && pendingReviews.length > 0 && (
         <div className="section">
           <p>
             You have {pendingReviews.length} task(s) awaiting review.{' '}
@@ -188,7 +208,7 @@ const Dashboard = () => {
             </div>
           )}
 
-          {role === 'mentor' && (
+          {role === 'admin' && (
             <div className="section">
               <h2>Skill reviews</h2>
               {tasksLoading && <p className="muted">Loading...</p>}
@@ -199,6 +219,22 @@ const Dashboard = () => {
                   <p className="muted">{pendingReviews.length} task(s) awaiting your review.</p>
                 ))}
               <button type="button" className="btn-text" onClick={() => setShowReviewModal(true)}>
+                Review submissions
+              </button>
+            </div>
+          )}
+
+          {role === 'admin' && (
+            <div className="section">
+              <h2>Gig approvals</h2>
+              {gigsLoading && <p className="muted">Loading...</p>}
+              {!gigsLoading &&
+                (pendingGigs.length === 0 ? (
+                  <p className="muted">Nothing to review right now.</p>
+                ) : (
+                  <p className="muted">{pendingGigs.length} gig(s) awaiting your review.</p>
+                ))}
+              <button type="button" className="btn-text" onClick={() => setShowGigModal(true)}>
                 Review submissions
               </button>
             </div>
@@ -229,7 +265,13 @@ const Dashboard = () => {
 
       {showReviewModal && (
         <Modal title="Skill verification reviews" onClose={() => setShowReviewModal(false)}>
-          <MentorReviewQueue tasks={tasks} onReviewed={refreshTasks} />
+          <AdminReviewQueue tasks={tasks} onReviewed={refreshTasks} />
+        </Modal>
+      )}
+
+      {showGigModal && (
+        <Modal title="Gig approvals" onClose={() => setShowGigModal(false)}>
+          <GigApprovalQueue gigs={gigs} onReviewed={refreshGigs} />
         </Modal>
       )}
     </div>

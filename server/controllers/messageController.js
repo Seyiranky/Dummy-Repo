@@ -16,8 +16,8 @@ exports.sendMessage = async (req, res) => {
   }
 
   const senderRole = req.user.role;
-  if (!['worker', 'mentor'].includes(senderRole) || !['worker', 'mentor'].includes(recipient.role)) {
-    return res.status(403).json({ message: 'Mentorship messaging is limited to workers and mentors' });
+  if (!['worker', 'admin'].includes(senderRole) || !['worker', 'admin'].includes(recipient.role)) {
+    return res.status(403).json({ message: 'Messaging is limited to workers and admins' });
   }
 
   const message = await Message.create({ senderId: req.user.id, recipientId, body });

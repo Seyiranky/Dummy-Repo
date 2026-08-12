@@ -37,7 +37,7 @@ const SkillVerificationForm = ({ tasks, onSubmitted }: SkillVerificationFormProp
       setNotes('');
       onSubmitted();
     } catch {
-      setError('Could not submit your task. A mentor may not be available right now.');
+      setError('Could not submit your task. An admin may not be available right now.');
     } finally {
       setSubmitting(false);
     }

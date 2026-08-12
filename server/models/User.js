@@ -13,6 +13,8 @@ module.exports = (sequelize, DataTypes) => {
       User.hasMany(models.Review, { foreignKey: 'recipientId', as: 'reviewsReceived' });
       User.hasMany(models.Message, { foreignKey: 'senderId', as: 'sentMessages' });
       User.hasMany(models.Message, { foreignKey: 'recipientId', as: 'receivedMessages' });
+      User.hasMany(models.Notification, { foreignKey: 'userId', as: 'notifications' });
+      User.hasMany(models.GigApplication, { foreignKey: 'workerId', as: 'gigApplications' });
     }
   }
   User.init(
@@ -39,7 +41,7 @@ module.exports = (sequelize, DataTypes) => {
       role: {
         type: DataTypes.STRING,
         allowNull: false,
-        validate: { isIn: [['worker', 'client', 'mentor', 'admin']] },
+        validate: { isIn: [['worker', 'client', 'admin']] },
       },
       bio: {
         type: DataTypes.TEXT,

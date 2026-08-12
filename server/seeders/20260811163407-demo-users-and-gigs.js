@@ -5,7 +5,7 @@ const bcrypt = require('bcrypt');
 const DEMO_DOMAIN = '@isoko.demo';
 const DEMO_PASSWORD = 'password123';
 
-const MENTORS = [
+const ADMINS = [
   { name: 'Emmanuel Nkurunziza', email: `emmanuel${DEMO_DOMAIN}` },
   { name: 'Solange Ingabire', email: `solange${DEMO_DOMAIN}` },
 ];
@@ -18,7 +18,7 @@ const WORKERS = [
     location: { lat: -1.9441, lng: 30.0619 },
     trustScore: 4.7,
     verified: true,
-    mentor: 'emmanuel',
+    reviewer: 'emmanuel',
   },
   {
     name: 'Patrick Habimana',
@@ -27,7 +27,7 @@ const WORKERS = [
     location: { lat: -1.9558, lng: 30.1044 },
     trustScore: 3.9,
     verified: true,
-    mentor: 'emmanuel',
+    reviewer: 'emmanuel',
   },
   {
     name: 'Aline Uwase',
@@ -36,7 +36,7 @@ const WORKERS = [
     location: { lat: -1.9706, lng: 30.0394 },
     trustScore: 5.0,
     verified: true,
-    mentor: 'solange',
+    reviewer: 'solange',
   },
   {
     name: 'Jean Bosco Mugisha',
@@ -45,7 +45,7 @@ const WORKERS = [
     location: { lat: -1.935, lng: 30.04 },
     trustScore: 4.2,
     verified: true,
-    mentor: 'emmanuel',
+    reviewer: 'emmanuel',
   },
   {
     name: 'Claudine Mukamana',
@@ -54,7 +54,7 @@ const WORKERS = [
     location: { lat: -1.935, lng: 30.0889 },
     trustScore: 4.8,
     verified: true,
-    mentor: 'solange',
+    reviewer: 'solange',
   },
   {
     name: 'David Ntwari',
@@ -63,7 +63,7 @@ const WORKERS = [
     location: { lat: -1.9833, lng: 30.0667 },
     trustScore: 0,
     verified: false,
-    mentor: 'emmanuel',
+    reviewer: 'emmanuel',
   },
 ];
 
@@ -139,7 +139,20 @@ const GIGS = [
     budget: 35000,
     location: { lat: -1.9558, lng: 30.1044 },
   },
+  {
+    client: 'diane',
+    category: 'tutoring',
+    title: 'Weekend French lessons for two kids',
+    description: 'Looking for a patient tutor to teach basic conversational French on weekends.',
+    budget: 45000,
+    location: { lat: -1.9706, lng: 30.0394 },
+    status: 'pending_review',
+  },
 ];
+
+// Workers who apply (pending) to the seeded "Repair my laptop screen" gig, so
+// the demo admin has real applications to review on the gig detail page.
+const APPLICANTS = ['jeanbosco', 'david'];
 
 module.exports = {
   async up(queryInterface) {
@@ -149,24 +162,23 @@ module.exports = {
     const [skillRows] = await queryInterface.sequelize.query('SELECT id, category FROM "Skills";');
     const skillIdByCategory = Object.fromEntries(skillRows.map((s) => [s.category, s.id]));
 
-    const mentorRecords = MENTORS.map((m) => ({ ...m, id: randomUUID() }));
-    const mentorIdByKey = Object.fromEntries(
-      mentorRecords.map((m) => [m.email.split('@')[0], m.id]),
-    );
+    const adminRecords = ADMINS.map((a) => ({ ...a, id: randomUUID() }));
+    const adminIdByKey = Object.fromEntries(adminRecords.map((a) => [a.email.split('@')[0], a.id]));
 
     const workerRecords = WORKERS.map((w) => ({ ...w, id: randomUUID() }));
+    const workerIdByKey = Object.fromEntries(workerRecords.map((w) => [w.email.split('@')[0], w.id]));
     const clientRecords = CLIENTS.map((c) => ({ ...c, id: randomUUID() }));
     const clientIdByKey = Object.fromEntries(
       clientRecords.map((c) => [c.email.split('@')[0], c.id]),
     );
 
     await queryInterface.bulkInsert('Users', [
-      ...mentorRecords.map((m) => ({
-        id: m.id,
-        name: m.name,
-        email: m.email,
+      ...adminRecords.map((a) => ({
+        id: a.id,
+        name: a.name,
+        email: a.email,
         passwordHash,
-        role: 'mentor',
+        role: 'admin',
         trustScore: 0,
         createdAt: now,
         updatedAt: now,
@@ -201,7 +213,7 @@ module.exports = {
         id: randomUUID(),
         workerId: w.id,
         skillId: skillIdByCategory[w.category],
-        reviewerId: mentorIdByKey[w.mentor],
+        reviewerId: adminIdByKey[w.reviewer],
         evidenceUrl: 'https://example.com/portfolio-sample.png',
         notes: 'Seeded demo submission.',
         status: w.verified ? 'approved' : 'pending',
@@ -226,10 +238,11 @@ module.exports = {
         })),
     );
 
+    const gigRecords = GIGS.map((g) => ({ ...g, id: randomUUID() }));
     await queryInterface.bulkInsert(
       'Gigs',
-      GIGS.map((g) => ({
-        id: randomUUID(),
+      gigRecords.map((g) => ({
+        id: g.id,
         clientId: clientIdByKey[g.client],
         skillId: skillIdByCategory[g.category],
         title: g.title,
@@ -237,7 +250,20 @@ module.exports = {
         budget: g.budget,
         locationLat: g.location.lat,
         locationLng: g.location.lng,
-        status: 'open',
+        status: g.status || 'open',
+        createdAt: now,
+        updatedAt: now,
+      })),
+    );
+
+    const laptopRepairGig = gigRecords.find((g) => g.title === 'Repair my laptop screen');
+    await queryInterface.bulkInsert(
+      'GigApplications',
+      APPLICANTS.map((key) => ({
+        id: randomUUID(),
+        gigId: laptopRepairGig.id,
+        workerId: workerIdByKey[key],
+        status: 'pending',
         createdAt: now,
         updatedAt: now,
       })),

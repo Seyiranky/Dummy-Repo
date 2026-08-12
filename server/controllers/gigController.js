@@ -1,6 +1,4 @@
-const { Op } = require('sequelize');
-const { Gig, User, Skill, UserSkill } = require('../models');
-const { rankCandidates } = require('../services/matchingService');
+const { Gig, User, Skill } = require('../models');
 
 const GIG_INCLUDES = [
   { model: User, as: 'client' },
@@ -28,6 +26,7 @@ exports.createGig = async (req, res) => {
     skillId,
     locationLat,
     locationLng,
+    status: 'pending_review',
   });
 
   res.status(201).json(gig);
@@ -50,36 +49,7 @@ exports.getGig = async (req, res) => {
   res.json(gig);
 };
 
-exports.getCandidates = async (req, res) => {
-  const gig = await Gig.findByPk(req.params.id);
-  if (!gig) {
-    return res.status(404).json({ message: 'Gig not found' });
-  }
-
-  const verifiedWorkers = await User.findAll({
-    where: { role: 'worker', locationLat: { [Op.not]: null }, locationLng: { [Op.not]: null } },
-    include: [
-      {
-        model: UserSkill,
-        as: 'userSkills',
-        where: { skillId: gig.skillId, verificationStatus: 'verified' },
-        required: true,
-      },
-    ],
-  });
-
-  const ranked = rankCandidates(gig, verifiedWorkers).map(({ worker, distanceKm, score }) => ({
-    workerId: worker.id,
-    name: worker.name,
-    trustScore: worker.trustScore,
-    distanceKm: Math.round(distanceKm * 100) / 100,
-    score: Math.round(score * 1000) / 1000,
-  }));
-
-  res.json(ranked);
-};
-
-const UPDATABLE_FIELDS = ['title', 'description', 'budget', 'locationLat', 'locationLng', 'status'];
+const UPDATABLE_FIELDS = ['title', 'description', 'budget', 'locationLat', 'locationLng'];
 
 exports.updateGig = async (req, res) => {
   const gig = await Gig.findByPk(req.params.id);

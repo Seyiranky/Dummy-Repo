@@ -1,4 +1,4 @@
-export type Role = 'worker' | 'client' | 'mentor' | 'admin';
+export type Role = 'worker' | 'client' | 'admin';
 export type SkillCategory = 'electronics_repair' | 'tailoring' | 'tutoring' | 'digital_web';
 
 export interface User {
@@ -37,7 +37,7 @@ export interface SkillTask {
   reviewer?: User;
 }
 
-export type GigStatus = 'open' | 'matched' | 'completed' | 'cancelled';
+export type GigStatus = 'pending_review' | 'open' | 'matched' | 'completed' | 'cancelled' | 'rejected';
 
 export interface Gig {
   id: string;
@@ -54,12 +54,16 @@ export interface Gig {
   skill?: Skill;
 }
 
-export interface Candidate {
+export type GigApplicationStatus = 'pending' | 'approved' | 'rejected';
+
+export interface GigApplication {
+  id: string;
+  gigId: string;
   workerId: string;
-  name: string;
-  trustScore: number;
-  distanceKm: number;
-  score: number;
+  status: GigApplicationStatus;
+  createdAt: string;
+  gig?: Gig;
+  worker?: User;
 }
 
 export type MatchStatus = 'pending' | 'accepted' | 'completed' | 'cancelled';
@@ -123,6 +127,15 @@ export interface Message {
   id: string;
   senderId: string;
   recipientId: string;
+  body: string;
+  readAt: string | null;
+  createdAt: string;
+}
+
+export interface AppNotification {
+  id: string;
+  userId: string;
+  title: string;
   body: string;
   readAt: string | null;
   createdAt: string;

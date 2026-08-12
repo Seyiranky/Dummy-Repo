@@ -1,4 +1,5 @@
 const request = require('supertest');
+const bcrypt = require('bcrypt');
 const app = require('../../app');
 const db = require('../../models');
 
@@ -6,17 +7,18 @@ const stamp = Date.now();
 const emails = {
   client: `api-client-${stamp}@example.com`,
   worker: `api-worker-${stamp}@example.com`,
-  mentor: `api-mentor-${stamp}@example.com`,
+  admin: `api-admin-${stamp}@example.com`,
 };
 
 let clientToken;
 let workerToken;
-let mentorToken;
+let adminToken;
 let workerId;
-let mentorId;
+let adminId;
 let skillId;
 let taskId;
 let gigId;
+let applicationId;
 let matchId;
 let transactionId;
 
@@ -26,7 +28,7 @@ afterAll(async () => {
 });
 
 describe('auth', () => {
-  test('registers a client, worker, and mentor', async () => {
+  test('registers a client and a worker', async () => {
     const client = await request(app)
       .post('/api/auth/register')
       .send({ name: 'Aline Client', email: emails.client, password: 'pass1234', role: 'client' });
@@ -39,13 +41,25 @@ describe('auth', () => {
     expect(worker.status).toBe(201);
     workerToken = worker.body.token;
     workerId = worker.body.userId;
+  });
 
-    const mentor = await request(app)
+  test('rejects self-registering as admin', async () => {
+    const res = await request(app)
       .post('/api/auth/register')
-      .send({ name: 'Grace Mentor', email: emails.mentor, password: 'pass1234', role: 'mentor' });
-    expect(mentor.status).toBe(201);
-    mentorToken = mentor.body.token;
-    mentorId = mentor.body.userId;
+      .send({ name: 'Nope', email: `nope-${stamp}@example.com`, password: 'pass1234', role: 'admin' });
+    expect(res.status).toBe(400);
+  });
+
+  test('provisions an admin directly (not self-registerable) and logs in', async () => {
+    const passwordHash = await bcrypt.hash('pass1234', 10);
+    const admin = await db.User.create({ name: 'Grace Admin', email: emails.admin, passwordHash, role: 'admin' });
+    adminId = admin.id;
+
+    const login = await request(app)
+      .post('/api/auth/login')
+      .send({ email: emails.admin, password: 'pass1234' });
+    expect(login.status).toBe(200);
+    adminToken = login.body.token;
   });
 
   test('rejects a duplicate email', async () => {
@@ -96,7 +110,7 @@ describe('skill verification', () => {
       .send({ skillId, evidenceUrl: 'https://example.com/evidence.png', notes: 'Sample work' });
 
     expect(res.status).toBe(201);
-    expect(res.body.reviewerId).toBe(mentorId);
+    expect(res.body.reviewerId).toBe(adminId);
     expect(res.body.reviewerId).not.toBe(workerId);
     taskId = res.body.id;
   });
@@ -109,18 +123,18 @@ describe('skill verification', () => {
     expect(res.status).toBe(403);
   });
 
-  test('the assigned mentor approves the task', async () => {
+  test('the assigned admin approves the task', async () => {
     const res = await request(app)
       .put(`/api/skill-tasks/${taskId}/review`)
-      .set('Authorization', `Bearer ${mentorToken}`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({ decision: 'approved' });
     expect(res.status).toBe(200);
     expect(res.body.status).toBe('approved');
   });
 });
 
-describe('gigs and matching', () => {
-  test('client posts a gig', async () => {
+describe('gigs and applications', () => {
+  test('client posts a gig, starting in pending_review', async () => {
     const res = await request(app)
       .post('/api/gigs')
       .set('Authorization', `Bearer ${clientToken}`)
@@ -133,6 +147,7 @@ describe('gigs and matching', () => {
         locationLng: 30.0619,
       });
     expect(res.status).toBe(201);
+    expect(res.body.status).toBe('pending_review');
     gigId = res.body.id;
   });
 
@@ -144,24 +159,50 @@ describe('gigs and matching', () => {
     expect(res.status).toBe(403);
   });
 
-  test('ranked candidates include the verified nearby worker with a computed distance', async () => {
+  test('a worker cannot apply while the gig is still pending review', async () => {
     const res = await request(app)
-      .get(`/api/gigs/${gigId}/candidates`)
-      .set('Authorization', `Bearer ${clientToken}`);
-    expect(res.status).toBe(200);
-    expect(res.body).toHaveLength(1);
-    expect(res.body[0].workerId).toBe(workerId);
-    expect(typeof res.body[0].distanceKm).toBe('number');
+      .post('/api/gig-applications')
+      .set('Authorization', `Bearer ${workerToken}`)
+      .send({ gigId });
+    expect(res.status).toBe(409);
   });
 
-  test('client creates a match, flipping the gig to matched', async () => {
+  test('admin approves the gig, publishing it', async () => {
     const res = await request(app)
-      .post('/api/matches')
-      .set('Authorization', `Bearer ${clientToken}`)
-      .send({ gigId, workerId });
+      .put(`/api/admin/gigs/${gigId}/review`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ decision: 'approved' });
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('open');
+  });
+
+  test('worker applies to the now-open gig', async () => {
+    const res = await request(app)
+      .post('/api/gig-applications')
+      .set('Authorization', `Bearer ${workerToken}`)
+      .send({ gigId });
     expect(res.status).toBe(201);
     expect(res.body.status).toBe('pending');
-    matchId = res.body.id;
+    applicationId = res.body.id;
+  });
+
+  test('the same worker cannot apply twice', async () => {
+    const res = await request(app)
+      .post('/api/gig-applications')
+      .set('Authorization', `Bearer ${workerToken}`)
+      .send({ gigId });
+    expect(res.status).toBe(409);
+  });
+
+  test('admin approves the application, creating an accepted match and flipping the gig to matched', async () => {
+    const res = await request(app)
+      .put(`/api/gig-applications/${applicationId}/review`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ decision: 'approved' });
+    expect(res.status).toBe(200);
+    expect(res.body.application.status).toBe('approved');
+    expect(res.body.match.status).toBe('accepted');
+    matchId = res.body.match.id;
 
     const gigRes = await request(app).get(`/api/gigs/${gigId}`);
     expect(gigRes.body.status).toBe('matched');
@@ -169,21 +210,12 @@ describe('gigs and matching', () => {
 });
 
 describe('match lifecycle and simulated payment', () => {
-  test('cannot skip straight from pending to completed', async () => {
+  test('cannot transition an accepted match backwards to pending', async () => {
     const res = await request(app)
       .put(`/api/matches/${matchId}/status`)
       .set('Authorization', `Bearer ${workerToken}`)
-      .send({ status: 'completed' });
+      .send({ status: 'pending' });
     expect(res.status).toBe(409);
-  });
-
-  test('worker accepts the match', async () => {
-    const res = await request(app)
-      .put(`/api/matches/${matchId}/status`)
-      .set('Authorization', `Bearer ${workerToken}`)
-      .send({ status: 'accepted' });
-    expect(res.status).toBe(200);
-    expect(res.body.status).toBe('accepted');
   });
 
   test('completing the match auto-initiates a simulated transaction', async () => {
@@ -229,19 +261,19 @@ describe('reviews and trust score', () => {
   });
 });
 
-describe('mentorship messaging', () => {
-  test('worker messages the mentor who reviewed them', async () => {
+describe('worker-admin messaging', () => {
+  test('worker messages the admin who reviewed them', async () => {
     const res = await request(app)
       .post('/api/messages')
       .set('Authorization', `Bearer ${workerToken}`)
-      .send({ recipientId: mentorId, body: 'Thanks for reviewing my task!' });
+      .send({ recipientId: adminId, body: 'Thanks for reviewing my task!' });
     expect(res.status).toBe(201);
   });
 
   test('the thread is visible to the sender', async () => {
     const res = await request(app)
       .get('/api/messages')
-      .query({ recipientId: mentorId })
+      .query({ recipientId: adminId })
       .set('Authorization', `Bearer ${workerToken}`);
     expect(res.status).toBe(200);
     expect(res.body).toHaveLength(1);

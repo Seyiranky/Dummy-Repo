@@ -74,7 +74,8 @@
 
 .app-shell {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .sidebar {
@@ -85,26 +86,32 @@
   padding: 1.5rem 1.25rem;
   background: var(--color-bg-surface);
   border-right: 1px solid var(--color-border);
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  transition: width 0.2s ease;
 }
 
 .sidebar-brand {
   display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-family: var(--font-heading);
-  font-weight: 800;
-  font-size: 1.15rem;
-  letter-spacing: -0.01em;
-  color: var(--color-ink);
   margin-bottom: 2rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  overflow: hidden;
+  /* Fixed (not theme-swapped) light backing — the logo's navy wordmark needs
+     a light surface to stay legible even when the sidebar itself goes dark. */
+  background: var(--color-cream);
 }
 
-.sidebar-brand::before {
-  content: '';
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--color-primary);
+.sidebar-logo-wrap {
+  display: block;
+}
+
+.sidebar-logo {
+  display: block;
+  width: 100%;
+  max-width: 152px;
+  height: auto;
 }
 
 .sidebar-links {
@@ -114,11 +121,58 @@
 }
 
 .sidebar-links > a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
   padding: 0.6rem 0.75rem;
   border-radius: 8px;
   color: var(--color-text);
   font-weight: 500;
   font-size: 0.92rem;
+}
+
+.sidebar-link-label {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.sidebar-link-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.sidebar-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.3em;
+  padding: 0.1em 0.4em;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.sidebar-icon-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.sidebar-dot {
+  display: none;
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  border: 2px solid var(--color-bg-surface);
 }
 
 .sidebar-links > a:hover {
@@ -145,6 +199,13 @@
   font-size: 0.85rem;
 }
 
+.sidebar-logout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
 @media (max-width: 720px) {
   .app-shell {
     flex-direction: column;
@@ -152,6 +213,7 @@
 
   .sidebar {
     width: auto;
+    flex: 0 0 auto;
     flex-direction: row;
     align-items: center;
     flex-wrap: wrap;
@@ -159,10 +221,15 @@
     border-right: none;
     border-bottom: 1px solid var(--color-border);
     padding: 1rem 1.25rem;
+    overflow-y: visible;
   }
 
   .sidebar-brand {
     margin-bottom: 0;
+  }
+
+  .sidebar-logo {
+    max-width: 120px;
   }
 
   .sidebar-links {
@@ -180,20 +247,222 @@
   }
 }
 
+/* Hover-to-expand only applies on desktop widths — the mobile sidebar already
+   collapses into a compact horizontal bar via its own layout above. Everything
+   here is scoped to :not(:hover), so hovering just lets the sidebar fall back
+   to its normal (expanded) rule set above — nothing to redeclare. */
+@media (min-width: 721px) {
+  /* No global box-sizing: border-box reset in this project, so width is a
+     content-box size — subtract the left/right padding + border to land on a
+     ~72px rendered rail. */
+  .sidebar:not(:hover) {
+    width: 47px;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .sidebar:not(:hover) .sidebar-brand {
+    padding: 0.5rem;
+  }
+
+  .sidebar:not(:hover) .sidebar-logo-wrap {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    overflow: hidden;
+  }
+
+  .sidebar:not(:hover) .sidebar-logo {
+    width: auto;
+    max-width: none;
+    height: 100%;
+    object-fit: cover;
+    object-position: left center;
+  }
+
+  .sidebar:not(:hover) .sidebar-links > a {
+    justify-content: center;
+    padding: 0.6rem;
+  }
+
+  .sidebar:not(:hover) .sidebar-link-text,
+  .sidebar:not(:hover) .sidebar-badge,
+  .sidebar:not(:hover) .sidebar-user {
+    display: none;
+  }
+
+  .sidebar:not(:hover) .sidebar-footer,
+  .sidebar:not(:hover) .identity {
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sidebar:not(:hover) .sidebar-dot {
+    display: block;
+  }
+}
+
 .app-main {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.auth-page {
+  display: flex;
+  min-height: calc(100vh - 3rem);
+  max-width: 960px;
+  margin: 0 auto;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  box-shadow: 0 12px 32px rgba(5, 32, 42, 0.12);
+}
+
+.auth-page-brand {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 3rem;
+  background: linear-gradient(160deg, var(--color-baltic-blue), var(--color-teal) 55%, var(--color-verdigris));
+  color: var(--color-cream);
+}
+
+.auth-page-brand-photo {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.3;
+  mix-blend-mode: luminosity;
+}
+
+.auth-page-brand-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.auth-page-logo {
+  display: block;
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+}
+
+.auth-page-tagline {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 2.1rem;
+  line-height: 1.2;
+  max-width: 380px;
+  margin: 0.5rem 0 0;
+}
+
+.auth-page-subtext {
+  max-width: 360px;
+  font-size: 0.98rem;
+  color: rgba(240, 243, 189, 0.85);
+  margin: 0;
+}
+
+.auth-page-form {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  background: var(--color-bg-surface);
+}
+
+@media (max-width: 860px) {
+  .auth-page-brand {
+    display: none;
+  }
+
+  .auth-page {
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    min-height: auto;
+    margin: 2rem auto;
+  }
+
+  .auth-page-form {
+    padding: 0;
+    background: transparent;
+  }
 }
 
 .auth-form {
-  max-width: 360px;
-  margin: 2rem auto;
-  padding: 1.5rem;
-  border-radius: 12px;
-  background: var(--color-bg-surface);
-  border: 1px solid var(--color-border);
-  box-shadow: 0 1px 3px rgba(5, 32, 42, 0.08);
+  width: 100%;
+  max-width: 290px;
+}
+
+.auth-form h1 {
+  font-size: 1.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.auth-form-subtitle {
+  color: var(--color-text-muted);
+  margin: 0 0 1.5rem;
+  font-size: 0.88rem;
+}
+
+.auth-form form {
+  gap: 1.1rem;
+}
+
+.auth-form-footer {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-border);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.25rem 0;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.btn-google {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 860px) {
+  .auth-form {
+    padding: 2rem;
+    border-radius: 16px;
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    box-shadow: 0 1px 3px rgba(5, 32, 42, 0.08);
+  }
 }
 
 form {
@@ -672,28 +941,76 @@ textarea:focus {
   }
 }
 
-.contact-list {
+.notification-list {
   display: flex;
-  flex-direction: row;
-  overflow-x: auto;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
-@media (min-width: 640px) {
-  .contact-list {
-    flex-direction: column;
-    overflow-x: visible;
-  }
+.notification-list-heading {
+  margin: 0.75rem 0 0.35rem;
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
 }
 
-.contact-list button {
+.notification-list-heading:first-child {
+  margin-top: 0;
+}
+
+.notification-list-empty {
+  margin: 0;
+}
+
+.notification-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
   text-align: left;
+  white-space: normal;
+}
+
+.notification-row.active {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.notification-row.unread .notification-row-title {
+  font-weight: 700;
+}
+
+.notification-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-primary);
+}
+
+.notification-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.notification-row-title {
+  font-weight: 500;
+}
+
+.notification-row-preview {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.contact-list button.active {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+.notification-detail h3 {
+  margin: 0 0 0.25rem;
 }
 
 .chat-header {
