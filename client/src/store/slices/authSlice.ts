@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
 import { isAxiosError } from 'axios';
-import { authApi, type AuthResponse } from '../../api/authApi';
+import { authApi, type AuthResponse, type GoogleLoginResponse } from '../../api/authApi';
 import { userApi } from '../../api/userApi';
 import type { Role, User } from '../../types';
 
@@ -56,7 +56,7 @@ export const register = createAsyncThunk(
 
 export const googleLogin = createAsyncThunk(
   'auth/googleLogin',
-  async (payload: { name: string; email: string; role: Role }, { rejectWithValue }) => {
+  async (payload: { credential: string; role?: Role }, { rejectWithValue }) => {
     try {
       return await authApi.googleLogin(payload);
     } catch (err) {
@@ -120,7 +120,13 @@ const authSlice = createSlice({
         state.status = 'loading';
         state.error = null;
       })
-      .addCase(googleLogin.fulfilled, applyAuthResponse)
+      .addCase(googleLogin.fulfilled, (state, action: PayloadAction<GoogleLoginResponse>) => {
+        if ('token' in action.payload) {
+          applyAuthResponse(state, action as PayloadAction<AuthResponse>);
+        } else {
+          state.status = 'idle';
+        }
+      })
       .addCase(googleLogin.rejected, (state, action) => {
         state.status = 'failed';
         state.error = (action.payload as string) ?? 'Google sign-in failed';

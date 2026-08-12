@@ -448,10 +448,8 @@
   background: var(--color-border);
 }
 
-.btn-google {
-  width: 100%;
+.google-login-button {
   display: flex;
-  align-items: center;
   justify-content: center;
 }
 

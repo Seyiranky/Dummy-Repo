@@ -1,10 +1,12 @@
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
 const { User } = require('../models');
 
 const SALT_ROUNDS = 10;
 const REGISTERABLE_ROLES = ['worker', 'client'];
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const signToken = (user) =>
   jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, {
@@ -53,26 +55,49 @@ exports.login = async (req, res) => {
   res.json({ token, userId: user.id, role: user.role });
 };
 
-// Simulated Google sign-in: no real Google integration is wired up. The client
-// collects a mock profile (name/email/role) from an in-app "account picker" and
-// posts it here, which either logs into a matching existing account or
-// provisions a new one — mirroring what a real OAuth callback would do.
+// Real Google sign-in: the client uses Google Identity Services to obtain a
+// signed ID token (a JWT issued and signed by Google, not something the
+// client can forge) and posts it here as `credential`. We verify it against
+// Google's public keys before trusting the email/name it contains.
+//
+// New accounts need a role, which Google's token doesn't carry. If the email
+// isn't registered yet and no `role` was sent, we respond with `needsRole`
+// instead of a token; the client then re-submits the same credential plus a
+// chosen role to finish provisioning the account.
 exports.googleLogin = async (req, res) => {
-  const { name, email, role } = req.body;
-  if (!name || !email) {
-    return res.status(400).json({ message: 'name and email are required' });
+  const { credential, role } = req.body;
+  if (!credential) {
+    return res.status(400).json({ message: 'credential is required' });
   }
 
-  let user = await User.findOne({ where: { email } });
+  let payload;
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    payload = ticket.getPayload();
+  } catch {
+    return res.status(401).json({ message: 'Invalid Google credential' });
+  }
+
+  if (!payload?.email_verified) {
+    return res.status(401).json({ message: 'Google account email is not verified' });
+  }
+
+  let user = await User.findOne({ where: { email: payload.email } });
   let status = 200;
 
   if (!user) {
+    if (!role) {
+      return res.status(200).json({ needsRole: true, name: payload.name, email: payload.email });
+    }
     if (!REGISTERABLE_ROLES.includes(role)) {
       return res.status(400).json({ message: `role must be one of: ${REGISTERABLE_ROLES.join(', ')}` });
     }
     // Unusable random hash — this account has no password, only Google sign-in.
     const passwordHash = await bcrypt.hash(crypto.randomUUID(), SALT_ROUNDS);
-    user = await User.create({ name, email, passwordHash, role });
+    user = await User.create({ name: payload.name, email: payload.email, passwordHash, role });
     status = 201;
   }
 

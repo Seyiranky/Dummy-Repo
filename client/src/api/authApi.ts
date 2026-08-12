@@ -7,6 +7,14 @@ export interface AuthResponse {
   role: Role;
 }
 
+export interface GoogleNeedsRole {
+  needsRole: true;
+  name: string;
+  email: string;
+}
+
+export type GoogleLoginResponse = AuthResponse | GoogleNeedsRole;
+
 export const authApi = {
   register: (payload: { name: string; email: string; password: string; role: Role }) =>
     axiosClient.post<AuthResponse>('/auth/register', payload).then((res) => res.data),
@@ -14,6 +22,6 @@ export const authApi = {
   login: (payload: { email: string; password: string }) =>
     axiosClient.post<AuthResponse>('/auth/login', payload).then((res) => res.data),
 
-  googleLogin: (payload: { name: string; email: string; role: Role }) =>
-    axiosClient.post<AuthResponse>('/auth/google', payload).then((res) => res.data),
+  googleLogin: (payload: { credential: string; role?: Role }) =>
+    axiosClient.post<GoogleLoginResponse>('/auth/google', payload).then((res) => res.data),
 };

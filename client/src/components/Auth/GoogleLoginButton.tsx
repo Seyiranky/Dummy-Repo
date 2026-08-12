@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { googleLogin } from '../../store/slices/authSlice';
 import Modal from '../common/Modal';
@@ -8,50 +9,55 @@ import { ROLE_OPTIONS } from '../../constants/roles';
 import type { Role } from '../../types';
 
 const GoogleLoginButton = () => {
-  const [open, setOpen] = useState(false);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [pendingCredential, setPendingCredential] = useState<string | null>(null);
+  const [pendingName, setPendingName] = useState('');
   const [role, setRole] = useState<Role>('worker');
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { status, error } = useAppSelector((state) => state.auth);
 
-  const handleContinue = async (e: FormEvent) => {
-    e.preventDefault();
-    const result = await dispatch(googleLogin({ name, email, role }));
+  const finishLogin = async (credential: string, chosenRole?: Role) => {
+    const result = await dispatch(googleLogin({ credential, role: chosenRole }));
     if (googleLogin.fulfilled.match(result)) {
-      setOpen(false);
-      navigate('/dashboard');
+      if ('needsRole' in result.payload) {
+        setPendingCredential(credential);
+        setPendingName(result.payload.name);
+      } else {
+        setPendingCredential(null);
+        navigate('/dashboard');
+      }
     }
+  };
+
+  const handleSuccess = (credentialResponse: CredentialResponse) => {
+    if (!credentialResponse.credential) return;
+    finishLogin(credentialResponse.credential);
+  };
+
+  const handleCompleteSignup = (e: FormEvent) => {
+    e.preventDefault();
+    if (!pendingCredential) return;
+    finishLogin(pendingCredential, role);
   };
 
   return (
     <>
-      <button type="button" className="btn-google" onClick={() => setOpen(true)}>
-        Continue with Google
-      </button>
+      <div className="google-login-button">
+        <GoogleLogin onSuccess={handleSuccess} onError={() => undefined} width="290" />
+      </div>
+      {error && !pendingCredential && <p className="form-error">{error}</p>}
 
-      {open && (
-        <Modal title="Choose an account" onClose={() => setOpen(false)}>
-          <p className="muted">
-            Simulated Google sign-in for this demo — no real Google account is contacted.
-          </p>
-          <form onSubmit={handleContinue}>
-            <label>
-              Name
-              <input value={name} onChange={(e) => setName(e.target.value)} required />
-            </label>
-            <label>
-              Email
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-            </label>
+      {pendingCredential && (
+        <Modal title="Finish setting up your account" onClose={() => setPendingCredential(null)}>
+          <p className="muted">Welcome, {pendingName}! Tell us how you'll be using Isoko Talents.</p>
+          <form onSubmit={handleCompleteSignup}>
             <label>
               I am a...
               <Select value={role} onChange={(v) => setRole(v as Role)} options={ROLE_OPTIONS} />
             </label>
             {error && <p className="form-error">{error}</p>}
             <button type="submit" className="btn-primary" disabled={status === 'loading'}>
-              {status === 'loading' ? 'Signing in...' : 'Continue'}
+              {status === 'loading' ? 'Finishing...' : 'Continue'}
             </button>
           </form>
         </Modal>
