@@ -153,6 +153,38 @@ describe('gigs and applications', () => {
     gigId = res.body.id;
   });
 
+  test('client posts a gig with an attached photo', async () => {
+    const res = await request(app)
+      .post('/api/gigs')
+      .set('Authorization', `Bearer ${clientToken}`)
+      .field('title', 'Fix a leaking pipe')
+      .field('description', 'Kitchen sink is leaking')
+      .field('budget', '15000')
+      .field('skillId', skillId)
+      .field('locationLat', '-1.95')
+      .field('locationLng', '30.06')
+      .attach('image', Buffer.from('fake-image-bytes'), 'photo.jpg');
+    expect(res.status).toBe(201);
+    expect(res.body.imageUrl).toMatch(/^\/uploads\/gigs\/.+\.jpg$/);
+
+    const imageRes = await request(app).get(res.body.imageUrl);
+    expect(imageRes.status).toBe(200);
+  });
+
+  test('rejects a non-image file attached as a gig photo', async () => {
+    const res = await request(app)
+      .post('/api/gigs')
+      .set('Authorization', `Bearer ${clientToken}`)
+      .field('title', 'x')
+      .field('description', 'y')
+      .field('budget', '1')
+      .field('skillId', skillId)
+      .field('locationLat', '0')
+      .field('locationLng', '0')
+      .attach('image', Buffer.from('not an image'), 'notes.txt');
+    expect(res.status).toBe(400);
+  });
+
   test('a worker cannot post a gig', async () => {
     const res = await request(app)
       .post('/api/gigs')

@@ -22,11 +22,12 @@ exports.createGig = async (req, res) => {
     clientId: req.user.id,
     title,
     description,
-    budget,
+    budget: Number(budget),
     skillId,
-    locationLat,
-    locationLng,
+    locationLat: Number(locationLat),
+    locationLng: Number(locationLng),
     status: 'pending_review',
+    imageUrl: req.file ? `/uploads/gigs/${req.file.filename}` : null,
   });
 
   res.status(201).json(gig);

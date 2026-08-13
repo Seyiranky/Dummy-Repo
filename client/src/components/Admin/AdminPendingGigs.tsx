@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { adminApi } from '../../api/adminApi';
 import { statusBadgeClass } from '../../utils/statusBadge';
 import IdentityLink from '../common/IdentityLink';
-import SkillThumbnail from '../common/SkillThumbnail';
+import GigThumbnail from '../common/GigThumbnail';
 import GigApprovalQueue from './GigApprovalQueue';
 import AdminNav from './AdminNav';
 import type { Gig } from '../../types';
@@ -61,7 +61,7 @@ const AdminPendingGigs = () => {
                     <td>{g.client ? <IdentityLink id={g.client.id} name={g.client.name} size={24} /> : 'Unknown'}</td>
                     <td>
                       <div className="skill-line">
-                        <SkillThumbnail category={g.skill?.category} size={24} />
+                        <GigThumbnail gig={g} size={24} />
                         {g.skill?.name}
                       </div>
                     </td>

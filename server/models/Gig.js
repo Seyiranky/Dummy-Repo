@@ -51,6 +51,10 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: 'pending_review',
         validate: { isIn: [['pending_review', 'open', 'matched', 'completed', 'cancelled', 'rejected']] },
       },
+      imageUrl: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
     },
     {
       sequelize,

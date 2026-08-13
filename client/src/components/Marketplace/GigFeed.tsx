@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchGigs } from '../../store/slices/gigSlice';
 import { statusBadgeClass } from '../../utils/statusBadge';
-import SkillThumbnail from '../common/SkillThumbnail';
+import GigThumbnail from '../common/GigThumbnail';
 
 const GigFeed = () => {
   const dispatch = useAppDispatch();
@@ -28,7 +28,7 @@ const GigFeed = () => {
         {visibleGigs.map((gig) => (
           <div key={gig.id} className="card gig-card">
             <div className="skill-line">
-              <SkillThumbnail category={gig.skill?.category} size={48} />
+              <GigThumbnail gig={gig} size={48} />
               <div>
                 <span className="card-title">{gig.title}</span>
                 <div className="muted">{gig.skill?.name}</div>

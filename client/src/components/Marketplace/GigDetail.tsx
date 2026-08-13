@@ -5,7 +5,7 @@ import { gigApi } from '../../api/gigApi';
 import { gigApplicationApi } from '../../api/gigApplicationApi';
 import { adminApi } from '../../api/adminApi';
 import IdentityLink from '../common/IdentityLink';
-import SkillThumbnail from '../common/SkillThumbnail';
+import GigThumbnail from '../common/GigThumbnail';
 import { statusBadgeClass } from '../../utils/statusBadge';
 import type { Gig, GigApplication } from '../../types';
 
@@ -79,7 +79,7 @@ const GigDetail = () => {
     <div>
       <div className="section">
         <div className="skill-line">
-          <SkillThumbnail category={gig.skill?.category} size={56} />
+          <GigThumbnail gig={gig} size={56} />
           <div>
             <span className="card-title">{gig.title}</span>
             <div className="muted">{gig.skill?.name}</div>

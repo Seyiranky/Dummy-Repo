@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { adminApi } from '../../api/adminApi';
 import IdentityLink from '../common/IdentityLink';
-import SkillThumbnail from '../common/SkillThumbnail';
+import GigThumbnail from '../common/GigThumbnail';
 import type { Gig } from '../../types';
 
 interface GigApprovalQueueProps {
@@ -31,7 +31,7 @@ const GigApprovalQueue = ({ gigs, onReviewed }: GigApprovalQueueProps) => {
         <div key={gig.id} className="card">
           <div className="card-row">
             <div className="skill-line">
-              <SkillThumbnail category={gig.skill?.category} />
+              <GigThumbnail gig={gig} />
               <div>
                 <span className="card-title">{gig.title}</span>
                 {gig.client && <IdentityLink id={gig.client.id} name={gig.client.name} size={24} />}

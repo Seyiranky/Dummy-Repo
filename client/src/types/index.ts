@@ -52,6 +52,7 @@ export interface Gig {
   locationLat: number;
   locationLng: number;
   status: GigStatus;
+  imageUrl?: string | null;
   createdAt: string;
   client?: User;
   skill?: Skill;

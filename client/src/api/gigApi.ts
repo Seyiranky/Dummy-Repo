@@ -11,8 +11,19 @@ export interface CreateGigPayload {
 }
 
 export const gigApi = {
-  createGig: (payload: CreateGigPayload) =>
-    axiosClient.post<Gig>('/gigs', payload).then((res) => res.data),
+  createGig: (payload: CreateGigPayload, imageFile?: File) => {
+    const formData = new FormData();
+    formData.append('title', payload.title);
+    formData.append('description', payload.description);
+    formData.append('budget', String(payload.budget));
+    formData.append('skillId', payload.skillId);
+    formData.append('locationLat', String(payload.locationLat));
+    formData.append('locationLng', String(payload.locationLng));
+    if (imageFile) {
+      formData.append('image', imageFile);
+    }
+    return axiosClient.post<Gig>('/gigs', formData).then((res) => res.data);
+  },
 
   listGigs: (filters?: { status?: GigStatus; skillId?: string }) =>
     axiosClient.get<Gig[]>('/gigs', { params: filters }).then((res) => res.data),

@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { skillApi } from '../../api/skillApi';
 import { gigApi } from '../../api/gigApi';
 import { useAppDispatch } from '../../store/hooks';
@@ -19,8 +19,11 @@ const GigForm = ({ onPosted }: GigFormProps) => {
   const [budget, setBudget] = useState('');
   const [skillId, setSkillId] = useState('');
   const [locationName, setLocationName] = useState(KIGALI_LOCATIONS[0].name);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     skillApi.listSkills().then((data) => {
@@ -29,23 +32,46 @@ const GigForm = ({ onPosted }: GigFormProps) => {
     });
   }, []);
 
+  useEffect(() => {
+    if (!imageFile) {
+      setImagePreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(imageFile);
+    setImagePreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [imageFile]);
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setImageFile(e.target.files?.[0] ?? null);
+  };
+
+  const clearImage = () => {
+    setImageFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
     try {
       const location = KIGALI_LOCATIONS.find((l) => l.name === locationName) ?? KIGALI_LOCATIONS[0];
-      await gigApi.createGig({
-        title,
-        description,
-        budget: Number(budget),
-        skillId,
-        locationLat: location.lat,
-        locationLng: location.lng,
-      });
+      await gigApi.createGig(
+        {
+          title,
+          description,
+          budget: Number(budget),
+          skillId,
+          locationLat: location.lat,
+          locationLng: location.lng,
+        },
+        imageFile ?? undefined,
+      );
       setTitle('');
       setDescription('');
       setBudget('');
+      clearImage();
       dispatch(fetchGigs());
       onPosted?.();
     } catch {
@@ -85,6 +111,18 @@ const GigForm = ({ onPosted }: GigFormProps) => {
           options={KIGALI_LOCATIONS.map((location) => ({ value: location.name, label: location.name }))}
         />
       </label>
+      <label>
+        Photo (optional)
+        <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} />
+      </label>
+      {imagePreview && (
+        <div className="gig-form-preview">
+          <img src={imagePreview} alt="Selected gig photo preview" />
+          <button type="button" className="btn-text" onClick={clearImage}>
+            Remove photo
+          </button>
+        </div>
+      )}
       {error && <p className="form-error">{error}</p>}
       <button type="submit" className="btn-primary" disabled={submitting || !skillId}>
         {submitting ? 'Posting...' : 'Post gig'}
