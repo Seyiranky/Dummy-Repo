@@ -882,6 +882,36 @@ textarea:focus {
   color: var(--color-ink-contrast);
 }
 
+.admin-nav {
+  margin-bottom: 1.5rem;
+}
+
+.admin-nav .toggle-option {
+  display: inline-block;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.icon-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.actions-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));

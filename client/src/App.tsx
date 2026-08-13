@@ -12,6 +12,9 @@ import GigDetailPage from './pages/GigDetailPage';
 import NotificationsPage from './pages/NotificationsPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
+import AdminUsersPage from './pages/AdminUsersPage';
+import AdminPendingGigsPage from './pages/AdminPendingGigsPage';
+import AdminCompletedGigsPage from './pages/AdminCompletedGigsPage';
 import WalletPage from './pages/WalletPage';
 import SettingsPage from './pages/SettingsPage';
 import { useAppDispatch, useAppSelector } from './store/hooks';
@@ -57,6 +60,9 @@ function App() {
           </Route>
           <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
             <Route path="/admin" element={<AdminPage />} />
+            <Route path="/admin/users" element={<AdminUsersPage />} />
+            <Route path="/admin/gigs/pending" element={<AdminPendingGigsPage />} />
+            <Route path="/admin/gigs/completed" element={<AdminCompletedGigsPage />} />
           </Route>
         </Routes>
       </main>

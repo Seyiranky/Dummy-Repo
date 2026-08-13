@@ -1,6 +1,6 @@
-const SUCCESS_STATUSES = new Set(['completed', 'approved', 'confirmed']);
+const SUCCESS_STATUSES = new Set(['completed', 'approved', 'confirmed', 'active']);
 const WARNING_STATUSES = new Set(['pending', 'initiated', 'pending_review']);
-const ERROR_STATUSES = new Set(['rejected', 'cancelled', 'failed']);
+const ERROR_STATUSES = new Set(['rejected', 'cancelled', 'failed', 'suspended']);
 const INFO_STATUSES = new Set(['open', 'accepted', 'matched']);
 
 export const statusBadgeClass = (status: string): string => {

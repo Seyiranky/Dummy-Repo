@@ -365,3 +365,121 @@ describe('password reset', () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe('admin: gig visibility', () => {
+  test("the completed gig's admin listing includes the worker who completed it and the payment status", async () => {
+    const res = await request(app).get('/api/admin/gigs').set('Authorization', `Bearer ${adminToken}`);
+    expect(res.status).toBe(200);
+    const gig = res.body.find((g) => g.id === gigId);
+    expect(gig.status).toBe('completed');
+    const match = gig.matches.find((m) => m.id === matchId);
+    expect(match.status).toBe('completed');
+    expect(match.worker.id).toBe(workerId);
+    expect(match.transaction.status).toBe('confirmed');
+  });
+});
+
+describe('admin: user moderation', () => {
+  const modEmail = `api-moderation-worker-${stamp}@example.com`;
+  const otherAdminEmail = `api-moderation-admin-${stamp}@example.com`;
+  let modToken;
+  let modId;
+  let otherAdminId;
+
+  afterAll(async () => {
+    await db.User.destroy({ where: { email: [modEmail, otherAdminEmail] } });
+  });
+
+  test('sets up a throwaway worker to moderate', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ name: 'Moderation Target', email: modEmail, password: 'pass1234', role: 'worker' });
+    expect(res.status).toBe(201);
+    modToken = res.body.token;
+    modId = res.body.userId;
+  });
+
+  test('a non-admin cannot suspend a user', async () => {
+    const res = await request(app)
+      .put(`/api/admin/users/${modId}/moderate`)
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({ action: 'suspend' });
+    expect(res.status).toBe(403);
+  });
+
+  test('admin cannot suspend their own account', async () => {
+    const res = await request(app)
+      .put(`/api/admin/users/${adminId}/moderate`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ action: 'suspend' });
+    expect(res.status).toBe(403);
+  });
+
+  test('admin cannot suspend another admin', async () => {
+    const passwordHash = await bcrypt.hash('pass1234', 10);
+    const otherAdmin = await db.User.create({
+      name: 'Other Admin',
+      email: otherAdminEmail,
+      passwordHash,
+      role: 'admin',
+    });
+    otherAdminId = otherAdmin.id;
+
+    const res = await request(app)
+      .put(`/api/admin/users/${otherAdminId}/moderate`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ action: 'suspend' });
+    expect(res.status).toBe(403);
+  });
+
+  test('admin suspends the worker', async () => {
+    const res = await request(app)
+      .put(`/api/admin/users/${modId}/moderate`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ action: 'suspend' });
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('suspended');
+  });
+
+  test('the suspended worker is immediately rejected on their existing token, not just at future logins', async () => {
+    const res = await request(app).get('/api/users/me').set('Authorization', `Bearer ${modToken}`);
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('ACCOUNT_SUSPENDED');
+  });
+
+  test('the suspended worker cannot log in', async () => {
+    const res = await request(app).post('/api/auth/login').send({ email: modEmail, password: 'pass1234' });
+    expect(res.status).toBe(403);
+  });
+
+  test('admin reactivates the worker', async () => {
+    const res = await request(app)
+      .put(`/api/admin/users/${modId}/moderate`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ action: 'activate' });
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('active');
+  });
+
+  test('the reactivated worker can log in again', async () => {
+    const res = await request(app).post('/api/auth/login').send({ email: modEmail, password: 'pass1234' });
+    expect(res.status).toBe(200);
+  });
+
+  test('admin cannot delete their own account', async () => {
+    const res = await request(app)
+      .delete(`/api/admin/users/${adminId}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(res.status).toBe(403);
+  });
+
+  test('admin deletes the worker', async () => {
+    const res = await request(app)
+      .delete(`/api/admin/users/${modId}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(res.status).toBe(200);
+
+    const stillThere = await db.User.findByPk(modId);
+    expect(stillThere).toBeNull();
+  });
+});

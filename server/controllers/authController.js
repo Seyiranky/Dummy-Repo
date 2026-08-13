@@ -50,6 +50,9 @@ exports.login = async (req, res) => {
   if (!passwordMatches) {
     return res.status(401).json({ message: 'Invalid email or password' });
   }
+  if (user.status === 'suspended') {
+    return res.status(403).json({ message: 'This account has been suspended. Contact an administrator.' });
+  }
 
   const token = signToken(user);
   res.json({ token, userId: user.id, role: user.role });
@@ -99,6 +102,10 @@ exports.googleLogin = async (req, res) => {
     const passwordHash = await bcrypt.hash(crypto.randomUUID(), SALT_ROUNDS);
     user = await User.create({ name: payload.name, email: payload.email, passwordHash, role });
     status = 201;
+  }
+
+  if (user.status === 'suspended') {
+    return res.status(403).json({ message: 'This account has been suspended. Contact an administrator.' });
   }
 
   const token = signToken(user);

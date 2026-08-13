@@ -63,3 +63,36 @@ export const LogoutIcon = () => (
     <path d="M17 10H7.5" />
   </svg>
 );
+
+const actionBaseProps: SVGProps<SVGSVGElement> = {
+  viewBox: '0 0 20 20',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.6,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+  'aria-hidden': true,
+};
+
+export const SuspendIcon = () => (
+  <svg {...actionBaseProps}>
+    <circle cx="10" cy="10" r="7" />
+    <path d="M5.4 5.4l9.2 9.2" />
+  </svg>
+);
+
+export const ReactivateIcon = () => (
+  <svg {...actionBaseProps}>
+    <path d="M15.5 6.5A6 6 0 1 0 16.5 10.5" />
+    <path d="M15.5 3v3.8h-3.8" />
+  </svg>
+);
+
+export const DeleteIcon = () => (
+  <svg {...actionBaseProps}>
+    <path d="M4.5 6h11" />
+    <path d="M8 6V4.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1V6" />
+    <path d="M6 6l.6 9.2a1.5 1.5 0 0 0 1.5 1.4h3.8a1.5 1.5 0 0 0 1.5-1.4L14 6" />
+    <path d="M8.3 9v4.5M11.7 9v4.5" />
+  </svg>
+);

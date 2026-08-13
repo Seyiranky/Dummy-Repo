@@ -12,4 +12,19 @@ axiosClient.interceptors.request.use((config) => {
   return config;
 });
 
+// A suspension takes effect immediately, even for someone already mid-session
+// with a valid token (see server/middleware/authMiddleware.js). Catch that
+// specific rejection here and force back to login rather than leaving every
+// screen silently failing its API calls.
+axiosClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.data?.code === 'ACCOUNT_SUSPENDED') {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  },
+);
+
 export default axiosClient;

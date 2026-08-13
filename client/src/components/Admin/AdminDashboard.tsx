@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { adminApi } from '../../api/adminApi';
-import { statusBadgeClass } from '../../utils/statusBadge';
-import IdentityLink from '../common/IdentityLink';
-import SkillThumbnail from '../common/SkillThumbnail';
+import AdminNav from './AdminNav';
 import type { Gig, User } from '../../types';
 
 const AdminDashboard = () => {
@@ -27,12 +26,16 @@ const AdminDashboard = () => {
     acc[u.role] = (acc[u.role] ?? 0) + 1;
     return acc;
   }, {});
+  const suspendedCount = users.filter((u) => u.status === 'suspended').length;
+  const pendingGigCount = gigs.filter((g) => g.status === 'pending_review').length;
+  const inProgressGigCount = gigs.filter((g) => g.status === 'open' || g.status === 'matched').length;
+  const completedGigCount = gigs.filter((g) => g.status === 'completed').length;
 
   return (
     <div>
       <div className="section">
         <h1>Admin dashboard</h1>
-        <p className="muted">Read-only view of platform activity. Moderation actions are not yet implemented.</p>
+        <p className="muted">Platform activity at a glance.</p>
         <div className="card-row">
           {Object.entries(roleCounts).map(([role, count]) => (
             <span key={role} className="badge badge-info">
@@ -40,80 +43,33 @@ const AdminDashboard = () => {
               {count === 1 ? '' : 's'}
             </span>
           ))}
+          {suspendedCount > 0 && (
+            <span className="badge badge-error">
+              {suspendedCount} suspended
+            </span>
+          )}
         </div>
       </div>
 
-      <div className="section">
-        <h2>Users ({users.length})</h2>
-        <div className="table-wrap">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Trust score</th>
-                <th>Joined</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.id}>
-                  <td>
-                    <IdentityLink id={u.id} name={u.name} size={24} />
-                  </td>
-                  <td>{u.email}</td>
-                  <td>
-                    <span className="badge">{u.role}</span>
-                  </td>
-                  <td>{u.trustScore.toFixed(1)}</td>
-                  <td>{new Date(u.createdAt ?? '').toLocaleDateString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <AdminNav />
 
-      <div className="section">
-        <h2>Gigs ({gigs.length})</h2>
-        <div className="table-wrap">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Client</th>
-                <th>Category</th>
-                <th>Budget</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {gigs.map((g) => (
-                <tr key={g.id}>
-                  <td>{g.title}</td>
-                  <td>
-                    {g.client ? (
-                      <IdentityLink id={g.client.id} name={g.client.name} size={24} />
-                    ) : (
-                      'Unknown'
-                    )}
-                  </td>
-                  <td>
-                    <div className="skill-line">
-                      <SkillThumbnail category={g.skill?.category} size={24} />
-                      {g.skill?.name}
-                    </div>
-                  </td>
-                  <td>{Number(g.budget).toLocaleString()} RWF</td>
-                  <td>
-                    <span className={statusBadgeClass(g.status)}>{g.status}</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <div className="stat-grid">
+        <Link to="/admin/users" className="stat-card link-reset">
+          <div className="stat-value">{users.length}</div>
+          <span className="stat-label">Users</span>
+        </Link>
+        <Link to="/admin/gigs/pending" className="stat-card link-reset">
+          <div className="stat-value">{pendingGigCount}</div>
+          <span className="stat-label">Pending gig approvals</span>
+        </Link>
+        <Link to="/admin/gigs/pending" className="stat-card link-reset">
+          <div className="stat-value">{inProgressGigCount}</div>
+          <span className="stat-label">Gigs in progress</span>
+        </Link>
+        <Link to="/admin/gigs/completed" className="stat-card link-reset">
+          <div className="stat-value">{completedGigCount}</div>
+          <span className="stat-label">Completed gigs</span>
+        </Link>
       </div>
     </div>
   );

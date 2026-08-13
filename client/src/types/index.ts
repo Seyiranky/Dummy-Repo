@@ -1,11 +1,14 @@
 export type Role = 'worker' | 'client' | 'admin';
 export type SkillCategory = 'electronics_repair' | 'tailoring' | 'tutoring' | 'digital_web';
 
+export type UserStatus = 'active' | 'suspended';
+
 export interface User {
   id: string;
   name: string;
   email: string;
   role: Role;
+  status: UserStatus;
   bio?: string | null;
   locationLat?: number | null;
   locationLng?: number | null;
@@ -52,6 +55,7 @@ export interface Gig {
   createdAt: string;
   client?: User;
   skill?: Skill;
+  matches?: Match[];
 }
 
 export type GigApplicationStatus = 'pending' | 'approved' | 'rejected';
@@ -75,6 +79,7 @@ export interface Match {
   status: MatchStatus;
   rankScore: number | null;
   createdAt: string;
+  updatedAt: string;
   gig?: Gig;
   worker?: User;
   transaction?: Transaction;
