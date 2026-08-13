@@ -104,3 +104,43 @@ exports.googleLogin = async (req, res) => {
   const token = signToken(user);
   res.status(status).json({ token, userId: user.id, role: user.role });
 };
+
+// No email service is configured for this project (that would need SMTP or a
+// transactional-email API, similar to how Google sign-in needed a real OAuth
+// Client ID). Instead of emailing a reset link, we hand the token straight
+// back in the response so the client can show/link to it directly — the same
+// "simulate what a real integration would do" approach used for payments.
+exports.forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ message: 'email is required' });
+  }
+
+  const user = await User.findOne({ where: { email } });
+  if (!user) {
+    return res.json({ message: 'If that email is registered, a reset link has been generated.' });
+  }
+
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  const resetTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+  await user.update({ resetToken, resetTokenExpiresAt });
+
+  res.json({ message: 'If that email is registered, a reset link has been generated.', resetToken });
+};
+
+exports.resetPassword = async (req, res) => {
+  const { token, password } = req.body;
+  if (!token || !password) {
+    return res.status(400).json({ message: 'token and password are required' });
+  }
+
+  const user = await User.findOne({ where: { resetToken: token } });
+  if (!user || !user.resetTokenExpiresAt || user.resetTokenExpiresAt < new Date()) {
+    return res.status(400).json({ message: 'This reset link is invalid or has expired' });
+  }
+
+  const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+  await user.update({ passwordHash, resetToken: null, resetTokenExpiresAt: null });
+
+  res.json({ message: 'Password updated. You can now log in.' });
+};

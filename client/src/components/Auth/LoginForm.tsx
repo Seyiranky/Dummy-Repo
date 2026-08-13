@@ -37,6 +37,9 @@ const LoginForm = () => {
             required
           />
         </label>
+        <p className="auth-form-forgot">
+          <Link to="/forgot-password">Forgot password?</Link>
+        </p>
         {error && <p className="form-error">{error}</p>}
         <button type="submit" className="btn-primary" disabled={status === 'loading'}>
           {status === 'loading' ? 'Logging in...' : 'Log in'}

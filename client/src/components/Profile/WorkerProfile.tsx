@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { userApi } from '../../api/userApi';
 import { reviewApi } from '../../api/reviewApi';
+import { useAppSelector } from '../../store/hooks';
+import { canMessage } from '../../utils/messaging';
 import TrustScoreRing from './TrustScoreRing';
 import Avatar from '../common/Avatar';
 import IdentityLink from '../common/IdentityLink';
@@ -10,6 +12,8 @@ import type { PublicProfile, Review, UserSkill } from '../../types';
 
 const WorkerProfile = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { role: viewerRole, profile: viewerProfile } = useAppSelector((state) => state.auth);
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [skills, setSkills] = useState<UserSkill[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -38,6 +42,13 @@ const WorkerProfile = () => {
     return <p className="form-error">This profile could not be found.</p>;
   }
 
+  const showMessageButton =
+    viewerProfile && viewerProfile.id !== profile.id && canMessage(viewerRole, profile.role);
+
+  const handleMessage = () => {
+    navigate('/notifications', { state: { contact: { id: profile.id, name: profile.name } } });
+  };
+
   return (
     <div>
       <div className="section profile-header">
@@ -50,6 +61,14 @@ const WorkerProfile = () => {
           <TrustScoreRing trustScore={profile.trustScore} />
         </div>
       </div>
+
+      {showMessageButton && (
+        <div className="section">
+          <button type="button" className="btn-primary" onClick={handleMessage}>
+            Message {profile.name.split(' ')[0]}
+          </button>
+        </div>
+      )}
 
       {profile.bio && (
         <div className="section">

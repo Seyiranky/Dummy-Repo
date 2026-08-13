@@ -13,6 +13,7 @@ const emails = {
 let clientToken;
 let workerToken;
 let adminToken;
+let clientId;
 let workerId;
 let adminId;
 let skillId;
@@ -34,6 +35,7 @@ describe('auth', () => {
       .send({ name: 'Aline Client', email: emails.client, password: 'pass1234', role: 'client' });
     expect(client.status).toBe(201);
     clientToken = client.body.token;
+    clientId = client.body.userId;
 
     const worker = await request(app)
       .post('/api/auth/register')
@@ -261,7 +263,7 @@ describe('reviews and trust score', () => {
   });
 });
 
-describe('worker-admin messaging', () => {
+describe('messaging', () => {
   test('worker messages the admin who reviewed them', async () => {
     const res = await request(app)
       .post('/api/messages')
@@ -277,5 +279,89 @@ describe('worker-admin messaging', () => {
       .set('Authorization', `Bearer ${workerToken}`);
     expect(res.status).toBe(200);
     expect(res.body).toHaveLength(1);
+  });
+
+  test('a worker and the client they worked with can message each other', async () => {
+    const fromWorker = await request(app)
+      .post('/api/messages')
+      .set('Authorization', `Bearer ${workerToken}`)
+      .send({ recipientId: clientId, body: 'Hi, checking in about the gig.' });
+    expect(fromWorker.status).toBe(201);
+
+    const fromClient = await request(app)
+      .post('/api/messages')
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({ recipientId: workerId, body: 'All good, thanks!' });
+    expect(fromClient.status).toBe(201);
+  });
+
+  test('two clients cannot message each other', async () => {
+    const otherClient = await request(app)
+      .post('/api/auth/register')
+      .send({ name: 'Other Client', email: `api-client-2-${stamp}@example.com`, password: 'pass1234', role: 'client' });
+    const res = await request(app)
+      .post('/api/messages')
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({ recipientId: otherClient.body.userId, body: 'Hello?' });
+    expect(res.status).toBe(403);
+    await db.User.destroy({ where: { email: `api-client-2-${stamp}@example.com` } });
+  });
+
+  test('listing contacts returns everyone messaged so far', async () => {
+    const res = await request(app)
+      .get('/api/messages/contacts')
+      .set('Authorization', `Bearer ${workerToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe('password reset', () => {
+  let resetToken;
+
+  test('requesting a reset for a registered email returns a token', async () => {
+    const res = await request(app).post('/api/auth/forgot-password').send({ email: emails.worker });
+    expect(res.status).toBe(200);
+    expect(res.body.resetToken).toBeTruthy();
+    resetToken = res.body.resetToken;
+  });
+
+  test('requesting a reset for an unknown email does not leak a token', async () => {
+    const res = await request(app)
+      .post('/api/auth/forgot-password')
+      .send({ email: `nobody-${stamp}@example.com` });
+    expect(res.status).toBe(200);
+    expect(res.body.resetToken).toBeUndefined();
+  });
+
+  test('rejects an invalid token', async () => {
+    const res = await request(app)
+      .post('/api/auth/reset-password')
+      .send({ token: 'not-a-real-token', password: 'newpass123' });
+    expect(res.status).toBe(400);
+  });
+
+  test('resets the password with a valid token', async () => {
+    const res = await request(app)
+      .post('/api/auth/reset-password')
+      .send({ token: resetToken, password: 'newpass123' });
+    expect(res.status).toBe(200);
+  });
+
+  test('logging in with the old password now fails', async () => {
+    const res = await request(app).post('/api/auth/login').send({ email: emails.worker, password: 'pass1234' });
+    expect(res.status).toBe(401);
+  });
+
+  test('logging in with the new password succeeds', async () => {
+    const res = await request(app).post('/api/auth/login').send({ email: emails.worker, password: 'newpass123' });
+    expect(res.status).toBe(200);
+  });
+
+  test('the reset token cannot be reused', async () => {
+    const res = await request(app)
+      .post('/api/auth/reset-password')
+      .send({ token: resetToken, password: 'anotherpass123' });
+    expect(res.status).toBe(400);
   });
 });

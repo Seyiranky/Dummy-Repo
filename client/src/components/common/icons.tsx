@@ -41,6 +41,21 @@ export const AdminIcon = () => (
   </svg>
 );
 
+export const WalletIcon = () => (
+  <svg {...baseProps}>
+    <rect x="2.5" y="5" width="15" height="11" rx="2" />
+    <path d="M2.5 8.5h15" />
+    <path d="M13 12.2h2.2" />
+  </svg>
+);
+
+export const SettingsIcon = () => (
+  <svg {...baseProps}>
+    <circle cx="10" cy="10" r="2.6" />
+    <path d="M10 3.5v2M10 14.5v2M16.5 10h-2M5.5 10h-2M14.8 5.2l-1.4 1.4M6.6 13.4l-1.4 1.4M14.8 14.8l-1.4-1.4M6.6 6.6 5.2 5.2" />
+  </svg>
+);
+
 export const LogoutIcon = () => (
   <svg {...baseProps}>
     <path d="M8 17.5H4.5A1.5 1.5 0 0 1 3 16V4a1.5 1.5 0 0 1 1.5-1.5H8" />

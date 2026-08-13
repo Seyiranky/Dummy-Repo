@@ -60,12 +60,23 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         defaultValue: 0,
       },
+      resetToken: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      resetTokenExpiresAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
     },
     {
       sequelize,
       modelName: 'User',
       defaultScope: {
-        attributes: { exclude: ['passwordHash'] },
+        // resetToken is a bearer credential for resetting a password — never
+        // serialize it on a normal query. resetTokenExpiresAt is harmless and
+        // stays visible since the reset flow needs to read it back.
+        attributes: { exclude: ['passwordHash', 'resetToken'] },
       },
       scopes: {
         withPassword: {

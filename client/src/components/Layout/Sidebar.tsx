@@ -4,7 +4,15 @@ import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { logout } from '../../store/slices/authSlice';
 import { notificationApi } from '../../api/notificationApi';
 import Avatar from '../common/Avatar';
-import { AdminIcon, DashboardIcon, LogoutIcon, MarketplaceIcon, NotificationsIcon } from '../common/icons';
+import {
+  AdminIcon,
+  DashboardIcon,
+  LogoutIcon,
+  MarketplaceIcon,
+  NotificationsIcon,
+  SettingsIcon,
+  WalletIcon,
+} from '../common/icons';
 import logo from '../../assets/logo.png';
 
 const navLinkClassName = ({ isActive }: { isActive: boolean }) => (isActive ? 'active' : undefined);
@@ -48,6 +56,14 @@ const Sidebar = () => {
             <span className="sidebar-link-text">Marketplace</span>
           </span>
         </NavLink>
+        {(role === 'worker' || role === 'client') && (
+          <NavLink to="/wallet" className={navLinkClassName} title="Wallet">
+            <span className="sidebar-link-label">
+              <WalletIcon />
+              <span className="sidebar-link-text">Wallet</span>
+            </span>
+          </NavLink>
+        )}
         <NavLink to="/notifications" className={navLinkClassName} title="Notifications">
           <span className="sidebar-link-label">
             <span className="sidebar-icon-wrap">
@@ -66,6 +82,12 @@ const Sidebar = () => {
             </span>
           </NavLink>
         )}
+        <NavLink to="/settings" className={navLinkClassName} title="Settings">
+          <span className="sidebar-link-label">
+            <SettingsIcon />
+            <span className="sidebar-link-text">Settings</span>
+          </span>
+        </NavLink>
       </nav>
 
       <div className="sidebar-footer">

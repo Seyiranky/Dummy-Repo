@@ -1,35 +1,54 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
 import { skillTaskApi } from '../../api/skillTaskApi';
 import { messageApi } from '../../api/messageApi';
 import { notificationApi } from '../../api/notificationApi';
 import Avatar from '../common/Avatar';
-import type { AppNotification, Message, User } from '../../types';
+import type { AppNotification, Message } from '../../types';
 
-type Selection = { type: 'contact'; user: User } | { type: 'notification'; id: string } | null;
+type Contact = { id: string; name: string };
+type Selection = { type: 'contact'; user: Contact } | { type: 'notification'; id: string } | null;
+type NavState = { contact?: Contact };
 
 const NotificationCenter = () => {
   const { role, profile } = useAppSelector((state) => state.auth);
-  const [contacts, setContacts] = useState<User[]>([]);
+  const location = useLocation();
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [selection, setSelection] = useState<Selection>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
 
-  const showMessagesSection = role === 'worker' || role === 'admin';
-
   useEffect(() => {
-    if (!showMessagesSection) return;
-    skillTaskApi.listTasks().then((tasks) => {
-      const seen = new Map<string, User>();
-      for (const task of tasks) {
-        const contact = role === 'admin' ? task.worker : task.reviewer;
-        if (contact) seen.set(contact.id, contact);
+    const taskContacts =
+      role === 'worker' || role === 'admin'
+        ? skillTaskApi.listTasks().then((tasks) => {
+            const seen = new Map<string, Contact>();
+            for (const task of tasks) {
+              const contact = role === 'admin' ? task.worker : task.reviewer;
+              if (contact) seen.set(contact.id, contact);
+            }
+            return Array.from(seen.values());
+          })
+        : Promise.resolve<Contact[]>([]);
+
+    Promise.all([taskContacts, messageApi.listContacts()]).then(([fromTasks, fromHistory]) => {
+      const merged = new Map<string, Contact>();
+      for (const c of fromTasks) merged.set(c.id, c);
+      for (const c of fromHistory) merged.set(c.id, c);
+
+      const navContact = (location.state as NavState | null)?.contact;
+      if (navContact) {
+        merged.set(navContact.id, navContact);
+        setSelection({ type: 'contact', user: merged.get(navContact.id)! });
       }
-      setContacts(Array.from(seen.values()));
+
+      setContacts(Array.from(merged.values()));
     });
-  }, [role, showMessagesSection]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role]);
 
   useEffect(() => {
     notificationApi.listNotifications().then(setNotifications);
@@ -75,31 +94,26 @@ const NotificationCenter = () => {
       <h2>Notifications</h2>
       <div className="chat-layout">
         <div className="notification-list">
-          {showMessagesSection && (
-            <>
-              <div className="notification-list-heading">Messages</div>
-              {contacts.length === 0 ? (
-                <p className="muted notification-list-empty">
-                  {role === 'admin'
-                    ? "You'll be able to message a worker once you've been assigned to review one of their skill tasks."
-                    : "You'll be able to message an admin once your skill task has been assigned for review."}
-                </p>
-              ) : (
-                contacts.map((contact) => (
-                  <button
-                    key={contact.id}
-                    type="button"
-                    className={`identity notification-row ${
-                      selection?.type === 'contact' && selection.user.id === contact.id ? 'active' : ''
-                    }`}
-                    onClick={() => setSelection({ type: 'contact', user: contact })}
-                  >
-                    <Avatar name={contact.name} size={28} />
-                    <span className="identity-name">{contact.name}</span>
-                  </button>
-                ))
-              )}
-            </>
+          <div className="notification-list-heading">Messages</div>
+          {contacts.length === 0 ? (
+            <p className="muted notification-list-empty">
+              You haven't started any conversations yet — visit someone's profile to send them a
+              message.
+            </p>
+          ) : (
+            contacts.map((contact) => (
+              <button
+                key={contact.id}
+                type="button"
+                className={`identity notification-row ${
+                  selection?.type === 'contact' && selection.user.id === contact.id ? 'active' : ''
+                }`}
+                onClick={() => setSelection({ type: 'contact', user: contact })}
+              >
+                <Avatar name={contact.name} size={28} />
+                <span className="identity-name">{contact.name}</span>
+              </button>
+            ))
           )}
 
           <div className="notification-list-heading">Updates</div>

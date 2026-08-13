@@ -24,4 +24,12 @@ export const authApi = {
 
   googleLogin: (payload: { credential: string; role?: Role }) =>
     axiosClient.post<GoogleLoginResponse>('/auth/google', payload).then((res) => res.data),
+
+  forgotPassword: (payload: { email: string }) =>
+    axiosClient
+      .post<{ message: string; resetToken?: string }>('/auth/forgot-password', payload)
+      .then((res) => res.data),
+
+  resetPassword: (payload: { token: string; password: string }) =>
+    axiosClient.post<{ message: string }>('/auth/reset-password', payload).then((res) => res.data),
 };

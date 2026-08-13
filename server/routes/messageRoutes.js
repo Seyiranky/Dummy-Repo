@@ -5,5 +5,6 @@ const { verifyToken } = require('../middleware/authMiddleware');
 
 router.post('/', verifyToken, messageController.sendMessage);
 router.get('/', verifyToken, messageController.listMessages);
+router.get('/contacts', verifyToken, messageController.listContacts);
 
 module.exports = router;

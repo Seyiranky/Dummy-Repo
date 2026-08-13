@@ -42,11 +42,12 @@ exports.applyToGig = async (req, res) => {
 };
 
 exports.listApplications = async (req, res) => {
-  let where = {};
+  const where = {};
+  if (req.query.gigId) {
+    where.gigId = req.query.gigId;
+  }
   if (req.user.role === 'worker') {
-    where = { workerId: req.user.id };
-  } else if (req.query.gigId) {
-    where = { gigId: req.query.gigId };
+    where.workerId = req.user.id;
   }
 
   const applications = await GigApplication.findAll({

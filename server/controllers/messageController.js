@@ -1,6 +1,14 @@
 const { Op } = require('sequelize');
 const { Message, User } = require('../models');
 
+const ALLOWED_PAIRS = [
+  ['worker', 'admin'],
+  ['worker', 'client'],
+];
+
+const canMessage = (roleA, roleB) =>
+  ALLOWED_PAIRS.some(([a, b]) => (roleA === a && roleB === b) || (roleA === b && roleB === a));
+
 exports.sendMessage = async (req, res) => {
   const { recipientId, body } = req.body;
   if (!recipientId || !body) {
@@ -15,9 +23,8 @@ exports.sendMessage = async (req, res) => {
     return res.status(404).json({ message: 'Recipient not found' });
   }
 
-  const senderRole = req.user.role;
-  if (!['worker', 'admin'].includes(senderRole) || !['worker', 'admin'].includes(recipient.role)) {
-    return res.status(403).json({ message: 'Messaging is limited to workers and admins' });
+  if (!canMessage(req.user.role, recipient.role)) {
+    return res.status(403).json({ message: 'Messaging is not available between these two roles' });
   }
 
   const message = await Message.create({ senderId: req.user.id, recipientId, body });
@@ -41,4 +48,25 @@ exports.listMessages = async (req, res) => {
   });
 
   res.json(messages);
+};
+
+exports.listContacts = async (req, res) => {
+  const messages = await Message.findAll({
+    where: {
+      [Op.or]: [{ senderId: req.user.id }, { recipientId: req.user.id }],
+    },
+    include: [
+      { model: User, as: 'sender' },
+      { model: User, as: 'recipient' },
+    ],
+    order: [['createdAt', 'DESC']],
+  });
+
+  const seen = new Map();
+  for (const message of messages) {
+    const other = message.senderId === req.user.id ? message.recipient : message.sender;
+    if (other) seen.set(other.id, other);
+  }
+
+  res.json(Array.from(seen.values()));
 };
