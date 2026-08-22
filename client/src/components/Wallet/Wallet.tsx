@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppSelector } from '../../store/hooks';
 import { transactionApi } from '../../api/transactionApi';
 import { statusBadgeClass } from '../../utils/statusBadge';
@@ -6,37 +7,8 @@ import IdentityLink from '../common/IdentityLink';
 import StatCard from '../Dashboard/StatCard';
 import type { Transaction } from '../../types';
 
-const WORKER_STEPS = [
-  {
-    title: 'Get matched to a gig',
-    body: 'Apply to an open gig and get approved by an admin, so a match is created for you.',
-  },
-  {
-    title: 'Complete the work',
-    body: 'Finish the job. Once you’re done, the client marks the match as completed.',
-  },
-  {
-    title: 'Get paid via MTN MoMo',
-    body: 'The client confirms the simulated MTN MoMo payment and the funds show up here as confirmed.',
-  },
-];
-
-const CLIENT_STEPS = [
-  {
-    title: 'Post a gig',
-    body: 'Describe the job and set a budget. An admin reviews it before it goes live to workers.',
-  },
-  {
-    title: 'Approve completed work',
-    body: 'Once your matched worker finishes the job, mark the match as completed.',
-  },
-  {
-    title: 'Pay via MTN MoMo',
-    body: 'Confirm the simulated MTN MoMo payment to release the funds to the worker.',
-  },
-];
-
 const Wallet = () => {
+  const { t } = useTranslation();
   const { role } = useAppSelector((state) => state.auth);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,28 +28,35 @@ const Wallet = () => {
   const pendingTotal = transactions
     .filter((t) => t.status === 'initiated')
     .reduce((sum, t) => sum + Number(t.amount), 0);
-  const steps = isClient ? CLIENT_STEPS : WORKER_STEPS;
+
+  const steps = isClient
+    ? [
+        { title: t('wallet.clientStep1Title'), body: t('wallet.clientStep1Body') },
+        { title: t('wallet.clientStep2Title'), body: t('wallet.clientStep2Body') },
+        { title: t('wallet.clientStep3Title'), body: t('wallet.clientStep3Body') },
+      ]
+    : [
+        { title: t('wallet.workerStep1Title'), body: t('wallet.workerStep1Body') },
+        { title: t('wallet.workerStep2Title'), body: t('wallet.workerStep2Body') },
+        { title: t('wallet.workerStep3Title'), body: t('wallet.workerStep3Body') },
+      ];
 
   return (
     <div>
-      <h1>Wallet</h1>
-      <p className="page-subtitle">
-        {isClient
-          ? 'Track what you’ve paid out to workers through Isoko Talents.'
-          : 'Track what you’ve earned through Isoko Talents.'}
-      </p>
+      <h1>{t('wallet.title')}</h1>
+      <p className="page-subtitle">{isClient ? t('wallet.subtitleClient') : t('wallet.subtitleWorker')}</p>
 
       <div className="stat-grid">
         <StatCard
-          label={isClient ? 'Total paid (confirmed)' : 'Total earned (confirmed)'}
+          label={isClient ? t('wallet.totalPaid') : t('wallet.totalEarned')}
           value={`${confirmedTotal.toLocaleString()} RWF`}
         />
-        <StatCard label="Pending" value={`${pendingTotal.toLocaleString()} RWF`} />
-        <StatCard label="Transactions" value={transactions.length} />
+        <StatCard label={t('wallet.pending')} value={`${pendingTotal.toLocaleString()} RWF`} />
+        <StatCard label={t('wallet.transactions')} value={transactions.length} />
       </div>
 
       <div className="section">
-        <h2>How payments work</h2>
+        <h2>{t('wallet.howPaymentsWork')}</h2>
         <div className="explainer-grid">
           {steps.map((step, index) => (
             <div className="explainer-card" key={step.title}>
@@ -87,36 +66,31 @@ const Wallet = () => {
             </div>
           ))}
         </div>
-        <p className="muted">
-          Isoko Talents uses a simulated MTN Mobile Money integration for this demo &mdash; no real money
-          moves.
-        </p>
+        <p className="muted">{t('wallet.simulatedNotice')}</p>
       </div>
 
       <div className="section">
-        <h2>Transaction history</h2>
-        {loading && <p className="muted">Loading...</p>}
-        {!loading && transactions.length === 0 && (
-          <p className="muted">No transactions yet &mdash; complete a match to see it here.</p>
-        )}
+        <h2>{t('wallet.transactionHistory')}</h2>
+        {loading && <p className="muted">{t('wallet.loading')}</p>}
+        {!loading && transactions.length === 0 && <p className="muted">{t('wallet.noTransactions')}</p>}
         {!loading && transactions.length > 0 && (
           <div className="table-wrap">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Gig</th>
-                  <th>{isClient ? 'Worker' : 'Client'}</th>
-                  <th>Amount</th>
-                  <th>Status</th>
-                  <th>Date</th>
+                  <th>{t('wallet.colGig')}</th>
+                  <th>{isClient ? t('wallet.colWorker') : t('wallet.colClient')}</th>
+                  <th>{t('wallet.colAmount')}</th>
+                  <th>{t('wallet.colStatus')}</th>
+                  <th>{t('wallet.colDate')}</th>
                 </tr>
               </thead>
               <tbody>
-                {transactions.map((t) => {
-                  const counterparty = isClient ? t.match?.worker : t.match?.gig?.client;
+                {transactions.map((t2) => {
+                  const counterparty = isClient ? t2.match?.worker : t2.match?.gig?.client;
                   return (
-                    <tr key={t.id}>
-                      <td>{t.match?.gig?.title ?? 'Gig'}</td>
+                    <tr key={t2.id}>
+                      <td>{t2.match?.gig?.title ?? t('wallet.colGig')}</td>
                       <td>
                         {counterparty ? (
                           <IdentityLink id={counterparty.id} name={counterparty.name} size={22} />
@@ -124,11 +98,11 @@ const Wallet = () => {
                           '—'
                         )}
                       </td>
-                      <td>{Number(t.amount).toLocaleString()} RWF</td>
+                      <td>{Number(t2.amount).toLocaleString()} RWF</td>
                       <td>
-                        <span className={statusBadgeClass(t.status)}>{t.status}</span>
+                        <span className={statusBadgeClass(t2.status)}>{t2.status}</span>
                       </td>
-                      <td>{new Date(t.createdAt).toLocaleDateString()}</td>
+                      <td>{new Date(t2.createdAt).toLocaleDateString()}</td>
                     </tr>
                   );
                 })}

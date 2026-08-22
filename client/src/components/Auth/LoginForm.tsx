@@ -1,10 +1,12 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { login } from '../../store/slices/authSlice';
 import GoogleLoginButton from './GoogleLoginButton';
 
 const LoginForm = () => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const dispatch = useAppDispatch();
@@ -21,15 +23,15 @@ const LoginForm = () => {
 
   return (
     <div className="auth-form">
-      <h1>Welcome back</h1>
-      <p className="auth-form-subtitle">Log in to manage your gigs, matches, and payments.</p>
+      <h1>{t('auth.login.title')}</h1>
+      <p className="auth-form-subtitle">{t('auth.login.subtitle')}</p>
       <form onSubmit={handleSubmit}>
         <label>
-          Email
+          {t('auth.login.emailLabel')}
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </label>
         <label>
-          Password
+          {t('auth.login.passwordLabel')}
           <input
             type="password"
             value={password}
@@ -38,21 +40,21 @@ const LoginForm = () => {
           />
         </label>
         <p className="auth-form-forgot">
-          <Link to="/forgot-password">Forgot password?</Link>
+          <Link to="/forgot-password">{t('auth.login.forgotPassword')}</Link>
         </p>
         {error && <p className="form-error">{error}</p>}
         <button type="submit" className="btn-primary" disabled={status === 'loading'}>
-          {status === 'loading' ? 'Logging in...' : 'Log in'}
+          {status === 'loading' ? t('auth.login.submitting') : t('auth.login.submit')}
         </button>
       </form>
 
       <div className="auth-divider">
-        <span>or</span>
+        <span>{t('auth.login.or')}</span>
       </div>
       <GoogleLoginButton />
 
       <p className="auth-form-footer">
-        No account? <Link to="/register">Register</Link>
+        {t('auth.login.noAccount')} <Link to="/register">{t('auth.login.registerLink')}</Link>
       </p>
     </div>
   );

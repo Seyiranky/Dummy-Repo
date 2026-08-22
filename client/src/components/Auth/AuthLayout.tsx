@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import tailoringPhoto from '../../assets/skills/tailoring.jpg';
 import logo from '../../assets/logo.png';
+import LanguageToggle from '../common/LanguageToggle';
 
 const AuthLayout = ({ children }: { children: ReactNode }) => {
   return (
@@ -16,7 +17,12 @@ const AuthLayout = ({ children }: { children: ReactNode }) => {
           </p>
         </div>
       </div>
-      <div className="auth-page-form">{children}</div>
+      <div className="auth-page-form">
+        <div className="auth-page-lang">
+          <LanguageToggle />
+        </div>
+        {children}
+      </div>
     </div>
   );
 };

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAppSelector } from '../../store/hooks';
 import { gigApi } from '../../api/gigApi';
 import { gigApplicationApi } from '../../api/gigApplicationApi';
@@ -7,9 +8,11 @@ import { adminApi } from '../../api/adminApi';
 import IdentityLink from '../common/IdentityLink';
 import GigThumbnail from '../common/GigThumbnail';
 import { statusBadgeClass } from '../../utils/statusBadge';
+import { locationName } from '../../utils/locationName';
 import type { Gig, GigApplication } from '../../types';
 
 const GigDetail = () => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { role, profile } = useAppSelector((state) => state.auth);
   const [gig, setGig] = useState<Gig | null>(null);
@@ -34,8 +37,8 @@ const GigDetail = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  if (loading) return <p className="muted">Loading gig...</p>;
-  if (!gig) return <p className="form-error">This gig could not be found.</p>;
+  if (loading) return <p className="muted">{t('marketplace.gigDetail.loading')}</p>;
+  if (!gig) return <p className="form-error">{t('marketplace.gigDetail.notFound')}</p>;
 
   const isOwner = role === 'client' && profile?.id === gig.clientId;
   const myApplication = role === 'worker' ? applications.find((a) => a.workerId === profile?.id) : undefined;
@@ -82,17 +85,20 @@ const GigDetail = () => {
           <GigThumbnail gig={gig} size={56} />
           <div>
             <span className="card-title">{gig.title}</span>
-            <div className="muted">{gig.skill?.name}</div>
+            <div className="muted">
+              {gig.skill?.name}
+              {locationName(gig.locationLat, gig.locationLng) && ` · ${locationName(gig.locationLat, gig.locationLng)}`}
+            </div>
           </div>
         </div>
         <p>{gig.description}</p>
         <div className="card-row">
-          <span className="muted">Budget: {gig.budget} RWF</span>
+          <span className="muted">{t('marketplace.gigDetail.budget', { amount: gig.budget })}</span>
           <span className={statusBadgeClass(gig.status)}>{gig.status.replace('_', ' ')}</span>
         </div>
         {gig.client && (
           <div>
-            <span className="muted">Posted by </span>
+            <span className="muted">{t('marketplace.gigDetail.postedBy')} </span>
             <IdentityLink id={gig.client.id} name={gig.client.name} size={24} />
           </div>
         )}
@@ -100,19 +106,19 @@ const GigDetail = () => {
 
       {isOwner && gig.status === 'pending_review' && (
         <div className="section">
-          <p className="muted">This gig is awaiting admin approval before it becomes visible to workers.</p>
+          <p className="muted">{t('marketplace.gigDetail.pendingReviewNotice')}</p>
         </div>
       )}
       {isOwner && gig.status === 'rejected' && (
         <div className="section">
-          <p className="form-error">This gig was rejected by an admin.</p>
+          <p className="form-error">{t('marketplace.gigDetail.rejectedNotice')}</p>
         </div>
       )}
 
       {role === 'admin' && gig.status === 'pending_review' && (
         <div className="section">
-          <h2>Approve this gig</h2>
-          <p className="muted">Review the details above, then approve to publish it for workers or reject it.</p>
+          <h2>{t('marketplace.gigDetail.approveThisGig')}</h2>
+          <p className="muted">{t('marketplace.gigDetail.approveInstructions')}</p>
           <div className="card-row">
             <button
               type="button"
@@ -120,7 +126,7 @@ const GigDetail = () => {
               onClick={() => handleGigDecision('approved')}
               disabled={busyId === id}
             >
-              Approve
+              {t('marketplace.gigDetail.approve')}
             </button>
             <button
               type="button"
@@ -128,7 +134,7 @@ const GigDetail = () => {
               onClick={() => handleGigDecision('rejected')}
               disabled={busyId === id}
             >
-              Reject
+              {t('marketplace.gigDetail.reject')}
             </button>
           </div>
         </div>
@@ -136,22 +142,23 @@ const GigDetail = () => {
 
       {role === 'worker' && (
         <div className="section">
-          <h2>Your application</h2>
+          <h2>{t('marketplace.gigDetail.yourApplication')}</h2>
           {!myApplication && gig.status !== 'open' && (
             <p className="muted">
               {gig.status === 'pending_review'
-                ? 'This gig is awaiting admin approval.'
-                : 'This gig is no longer accepting applications.'}
+                ? t('marketplace.gigDetail.awaitingApprovalNotice')
+                : t('marketplace.gigDetail.noLongerAcceptingNotice')}
             </p>
           )}
           {!myApplication && gig.status === 'open' && (
             <button type="button" className="btn-primary" onClick={handleApply} disabled={applying}>
-              {applying ? 'Applying...' : 'Apply to this gig'}
+              {applying ? t('marketplace.gigDetail.applying') : t('marketplace.gigDetail.applyButton')}
             </button>
           )}
           {myApplication && (
             <p>
-              Status: <span className={statusBadgeClass(myApplication.status)}>{myApplication.status}</span>
+              {t('marketplace.gigDetail.statusLabel')}{' '}
+              <span className={statusBadgeClass(myApplication.status)}>{myApplication.status}</span>
             </p>
           )}
         </div>
@@ -159,15 +166,17 @@ const GigDetail = () => {
 
       {(role === 'admin' || isOwner) && (
         <div className="section">
-          <h2>Applicants ({applications.length})</h2>
-          {applications.length === 0 && <p className="muted">No applications yet.</p>}
+          <h2>{t('marketplace.gigDetail.applicants', { count: applications.length })}</h2>
+          {applications.length === 0 && <p className="muted">{t('marketplace.gigDetail.noApplicationsYet')}</p>}
           {sortedApplicants.map((application) => (
             <div key={application.id} className="card card-row candidate-row">
               <div className="identity">
                 {application.worker && (
                   <IdentityLink id={application.worker.id} name={application.worker.name} size={28} />
                 )}
-                <span className="muted">trust {application.worker?.trustScore.toFixed(1)}</span>
+                <span className="muted">
+                  {t('marketplace.gigDetail.trustLabel', { score: application.worker?.trustScore.toFixed(1) })}
+                </span>
                 <span className={statusBadgeClass(application.status)}>{application.status}</span>
               </div>
               {role === 'admin' && application.status === 'pending' && (
@@ -178,7 +187,7 @@ const GigDetail = () => {
                     onClick={() => handleApplicationDecision(application.id, 'approved')}
                     disabled={busyId === application.id}
                   >
-                    Approve
+                    {t('marketplace.gigDetail.approve')}
                   </button>
                   <button
                     type="button"
@@ -186,7 +195,7 @@ const GigDetail = () => {
                     onClick={() => handleApplicationDecision(application.id, 'rejected')}
                     disabled={busyId === application.id}
                   >
-                    Reject
+                    {t('marketplace.gigDetail.reject')}
                   </button>
                 </div>
               )}

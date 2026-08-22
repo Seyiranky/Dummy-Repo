@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { skillApi } from '../../api/skillApi';
 import { gigApi } from '../../api/gigApi';
 import { useAppDispatch } from '../../store/hooks';
@@ -12,6 +13,7 @@ interface GigFormProps {
 }
 
 const GigForm = ({ onPosted }: GigFormProps) => {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const [skills, setSkills] = useState<Skill[]>([]);
   const [title, setTitle] = useState('');
@@ -75,7 +77,7 @@ const GigForm = ({ onPosted }: GigFormProps) => {
       dispatch(fetchGigs());
       onPosted?.();
     } catch {
-      setError('Failed to post gig. Please check your inputs.');
+      setError(t('marketplace.gigForm.submitError'));
     } finally {
       setSubmitting(false);
     }
@@ -84,19 +86,19 @@ const GigForm = ({ onPosted }: GigFormProps) => {
   return (
     <form onSubmit={handleSubmit}>
       <label>
-        Title
+        {t('marketplace.gigForm.titleLabel')}
         <input value={title} onChange={(e) => setTitle(e.target.value)} required />
       </label>
       <label>
-        Description
+        {t('marketplace.gigForm.descriptionLabel')}
         <textarea value={description} onChange={(e) => setDescription(e.target.value)} required rows={3} />
       </label>
       <label>
-        Budget (RWF)
+        {t('marketplace.gigForm.budgetLabel')}
         <input type="number" min="0" value={budget} onChange={(e) => setBudget(e.target.value)} required />
       </label>
       <label>
-        Skill category
+        {t('marketplace.gigForm.skillCategoryLabel')}
         <Select
           value={skillId}
           onChange={setSkillId}
@@ -104,7 +106,7 @@ const GigForm = ({ onPosted }: GigFormProps) => {
         />
       </label>
       <label>
-        Location
+        {t('marketplace.gigForm.locationLabel')}
         <Select
           value={locationName}
           onChange={setLocationName}
@@ -112,20 +114,20 @@ const GigForm = ({ onPosted }: GigFormProps) => {
         />
       </label>
       <label>
-        Photo (optional)
+        {t('marketplace.gigForm.photoLabel')}
         <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} />
       </label>
       {imagePreview && (
         <div className="gig-form-preview">
           <img src={imagePreview} alt="Selected gig photo preview" />
           <button type="button" className="btn-text" onClick={clearImage}>
-            Remove photo
+            {t('marketplace.gigForm.removePhoto')}
           </button>
         </div>
       )}
       {error && <p className="form-error">{error}</p>}
       <button type="submit" className="btn-primary" disabled={submitting || !skillId}>
-        {submitting ? 'Posting...' : 'Post gig'}
+        {submitting ? t('marketplace.gigForm.submitting') : t('marketplace.gigForm.submit')}
       </button>
     </form>
   );

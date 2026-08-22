@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { authApi } from '../../api/authApi';
 
 const ResetPasswordForm = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') ?? '';
   const [password, setPassword] = useState('');
@@ -15,7 +17,7 @@ const ResetPasswordForm = () => {
     e.preventDefault();
     setError(null);
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError(t('auth.resetPassword.mismatchError'));
       return;
     }
     setSubmitting(true);
@@ -23,7 +25,7 @@ const ResetPasswordForm = () => {
       await authApi.resetPassword({ token, password });
       navigate('/login');
     } catch {
-      setError('This reset link is invalid or has expired.');
+      setError(t('auth.resetPassword.invalidTokenError'));
     } finally {
       setSubmitting(false);
     }
@@ -32,10 +34,10 @@ const ResetPasswordForm = () => {
   if (!token) {
     return (
       <div className="auth-form">
-        <h1>Reset your password</h1>
-        <p className="form-error">This reset link is missing its token.</p>
+        <h1>{t('auth.resetPassword.missingTokenTitle')}</h1>
+        <p className="form-error">{t('auth.resetPassword.missingTokenError')}</p>
         <p className="auth-form-footer">
-          <Link to="/forgot-password">Request a new reset link</Link>
+          <Link to="/forgot-password">{t('auth.resetPassword.requestNewLink')}</Link>
         </p>
       </div>
     );
@@ -43,10 +45,10 @@ const ResetPasswordForm = () => {
 
   return (
     <div className="auth-form">
-      <h1>Choose a new password</h1>
+      <h1>{t('auth.resetPassword.title')}</h1>
       <form onSubmit={handleSubmit}>
         <label>
-          New password
+          {t('auth.resetPassword.newPasswordLabel')}
           <input
             type="password"
             value={password}
@@ -56,7 +58,7 @@ const ResetPasswordForm = () => {
           />
         </label>
         <label>
-          Confirm new password
+          {t('auth.resetPassword.confirmPasswordLabel')}
           <input
             type="password"
             value={confirmPassword}
@@ -67,11 +69,11 @@ const ResetPasswordForm = () => {
         </label>
         {error && <p className="form-error">{error}</p>}
         <button type="submit" className="btn-primary" disabled={submitting}>
-          {submitting ? 'Saving...' : 'Save new password'}
+          {submitting ? t('auth.resetPassword.submitting') : t('auth.resetPassword.submit')}
         </button>
       </form>
       <p className="auth-form-footer">
-        <Link to="/login">Back to log in</Link>
+        <Link to="/login">{t('auth.resetPassword.backToLogin')}</Link>
       </p>
     </div>
   );

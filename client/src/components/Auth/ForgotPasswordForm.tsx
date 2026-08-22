@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { authApi } from '../../api/authApi';
 
 const ForgotPasswordForm = () => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,10 +19,10 @@ const ForgotPasswordForm = () => {
       if (result.resetToken) {
         setResetLink(`/reset-password?token=${result.resetToken}`);
       } else {
-        setError('No account was found for that email.');
+        setError(t('auth.forgotPassword.noAccountError'));
       }
     } catch {
-      setError('Something went wrong. Please try again.');
+      setError(t('auth.forgotPassword.genericError'));
     } finally {
       setSubmitting(false);
     }
@@ -28,34 +30,31 @@ const ForgotPasswordForm = () => {
 
   return (
     <div className="auth-form">
-      <h1>Reset your password</h1>
-      <p className="auth-form-subtitle">Enter your account email and we'll get you a reset link.</p>
+      <h1>{t('auth.forgotPassword.title')}</h1>
+      <p className="auth-form-subtitle">{t('auth.forgotPassword.subtitle')}</p>
 
       {!resetLink ? (
         <form onSubmit={handleSubmit}>
           <label>
-            Email
+            {t('auth.forgotPassword.emailLabel')}
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </label>
           {error && <p className="form-error">{error}</p>}
           <button type="submit" className="btn-primary" disabled={submitting}>
-            {submitting ? 'Sending...' : 'Send reset link'}
+            {submitting ? t('auth.forgotPassword.submitting') : t('auth.forgotPassword.submit')}
           </button>
         </form>
       ) : (
         <div>
-          <p className="muted">
-            This demo has no email sending set up, so here's your reset link directly instead of an
-            inbox:
-          </p>
+          <p className="muted">{t('auth.forgotPassword.noEmailNotice')}</p>
           <p>
-            <Link to={resetLink}>Continue to reset your password →</Link>
+            <Link to={resetLink}>{t('auth.forgotPassword.continueLink')}</Link>
           </p>
         </div>
       )}
 
       <p className="auth-form-footer">
-        Remembered it? <Link to="/login">Log in</Link>
+        {t('auth.forgotPassword.remembered')} <Link to="/login">{t('auth.forgotPassword.loginLink')}</Link>
       </p>
     </div>
   );

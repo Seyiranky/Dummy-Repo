@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { register } from '../../store/slices/authSlice';
 import Select from '../common/Select';
@@ -7,6 +8,7 @@ import { ROLE_OPTIONS } from '../../constants/roles';
 import type { Role } from '../../types';
 
 const RegisterForm = () => {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,19 +27,19 @@ const RegisterForm = () => {
 
   return (
     <div className="auth-form">
-      <h1>Create your account</h1>
-      <p className="auth-form-subtitle">Join Isoko Talents as a worker or a client.</p>
+      <h1>{t('auth.register.title')}</h1>
+      <p className="auth-form-subtitle">{t('auth.register.subtitle')}</p>
       <form onSubmit={handleSubmit}>
         <label>
-          Name
+          {t('auth.register.nameLabel')}
           <input value={name} onChange={(e) => setName(e.target.value)} required />
         </label>
         <label>
-          Email
+          {t('auth.register.emailLabel')}
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </label>
         <label>
-          Password
+          {t('auth.register.passwordLabel')}
           <input
             type="password"
             value={password}
@@ -47,16 +49,16 @@ const RegisterForm = () => {
           />
         </label>
         <label>
-          I am a...
+          {t('auth.register.roleLabel')}
           <Select value={role} onChange={(v) => setRole(v as Role)} options={ROLE_OPTIONS} />
         </label>
         {error && <p className="form-error">{error}</p>}
         <button type="submit" className="btn-primary" disabled={status === 'loading'}>
-          {status === 'loading' ? 'Creating account...' : 'Register'}
+          {status === 'loading' ? t('auth.register.submitting') : t('auth.register.submit')}
         </button>
       </form>
       <p className="auth-form-footer">
-        Already have an account? <Link to="/login">Log in</Link>
+        {t('auth.register.haveAccount')} <Link to="/login">{t('auth.register.loginLink')}</Link>
       </p>
     </div>
   );

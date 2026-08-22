@@ -56,6 +56,14 @@ export const SettingsIcon = () => (
   </svg>
 );
 
+export const GlobeIcon = () => (
+  <svg {...baseProps}>
+    <circle cx="10" cy="10" r="7.5" />
+    <path d="M2.5 10h15" />
+    <path d="M10 2.5c2.1 2.1 3.3 4.8 3.3 7.5s-1.2 5.4-3.3 7.5c-2.1-2.1-3.3-4.8-3.3-7.5S7.9 4.6 10 2.5Z" />
+  </svg>
+);
+
 export const LogoutIcon = () => (
   <svg {...baseProps}>
     <path d="M8 17.5H4.5A1.5 1.5 0 0 1 3 16V4a1.5 1.5 0 0 1 1.5-1.5H8" />

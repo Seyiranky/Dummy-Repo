@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { userApi } from '../../api/userApi';
 
 const ExportDataButton = () => {
+  const { t } = useTranslation();
   const [exporting, setExporting] = useState(false);
 
   const handleExport = async () => {
@@ -24,12 +26,9 @@ const ExportDataButton = () => {
 
   return (
     <div className="settings-divider">
-      <p>
-        Download a copy of everything Isoko Talents holds about your account — your profile, skill
-        submissions, gigs, matches, payments, reviews, and messages — as a JSON file.
-      </p>
+      <p>{t('settings.exportDesc')}</p>
       <button type="button" onClick={handleExport} disabled={exporting}>
-        {exporting ? 'Preparing export...' : 'Export my data'}
+        {exporting ? t('settings.exporting') : t('settings.exportButton')}
       </button>
     </div>
   );

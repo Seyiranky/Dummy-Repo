@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchMatches } from '../../store/slices/matchSlice';
 import { skillTaskApi } from '../../api/skillTaskApi';
@@ -19,6 +20,7 @@ import GigApprovalQueue from '../Admin/GigApprovalQueue';
 import type { Gig, SkillTask, Transaction, UserSkill } from '../../types';
 
 const Dashboard = () => {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const { profile, role } = useAppSelector((state) => state.auth);
   const matches = useAppSelector((state) => state.matches.items);
@@ -93,7 +95,7 @@ const Dashboard = () => {
       <div className="dashboard-header">
         <Avatar name={profile.name} size={64} />
         <div>
-          <h1 className="profile-name">Welcome, {profile.name}</h1>
+          <h1 className="profile-name">{t('dashboard.welcome', { name: profile.name })}</h1>
           <span className="badge">{profile.role}</span>
         </div>
       </div>
@@ -101,8 +103,8 @@ const Dashboard = () => {
       {needsLocation && (
         <div className="section">
           <p className="form-error">
-            Set your location under <Link to="/settings">Settings</Link> so clients can find you in nearby
-            gig matches.
+            {t('dashboard.locationPromptBefore')} <Link to="/settings">{t('sidebar.settings')}</Link>{' '}
+            {t('dashboard.locationPromptAfter')}
           </p>
         </div>
       )}
@@ -110,41 +112,45 @@ const Dashboard = () => {
       <div className="stat-grid">
         {(role === 'worker' || role === 'client') && (
           <>
-            <StatCard label="Trust score" value={<TrustScoreRing trustScore={profile.trustScore} size={72} />} />
             <StatCard
-              label={role === 'client' ? 'Total paid (confirmed)' : 'Total earned (confirmed)'}
+              label={t('dashboard.trustScore')}
+              value={<TrustScoreRing trustScore={profile.trustScore} size={72} />}
+            />
+            <StatCard
+              label={role === 'client' ? t('dashboard.totalPaid') : t('dashboard.totalEarned')}
               value={`${confirmedTotal.toLocaleString()} RWF`}
             />
-            <StatCard label="Active matches" value={activeMatches} />
+            <StatCard label={t('dashboard.activeMatches')} value={activeMatches} />
           </>
         )}
         {role === 'admin' && (
           <>
-            <StatCard label="Pending reviews" value={pendingReviews.length} />
-            <StatCard label="Reviews completed" value={decidedReviews.length} />
-            <StatCard label="Pending gig approvals" value={pendingGigs.length} />
+            <StatCard label={t('dashboard.pendingReviews')} value={pendingReviews.length} />
+            <StatCard label={t('dashboard.reviewsCompleted')} value={decidedReviews.length} />
+            <StatCard label={t('dashboard.pendingGigApprovals')} value={pendingGigs.length} />
           </>
         )}
       </div>
 
       {role === 'client' && (
         <div className="section">
-          <h2>Get started</h2>
+          <h2>{t('dashboard.getStarted')}</h2>
           <p>
-            Post a gig and let the matching engine find nearby, verified workers.{' '}
-            <Link to="/marketplace">Go to Marketplace</Link>
+            {t('dashboard.clientGetStarted')}{' '}
+            <Link to="/marketplace">{t('dashboard.goToMarketplace')}</Link>
           </p>
         </div>
       )}
 
       {role === 'worker' && (
         <div className="section">
-          <h2>Get started</h2>
+          <h2>{t('dashboard.getStarted')}</h2>
           <p>
             <button type="button" className="btn-text" onClick={() => setShowSkillModal(true)}>
-              Submit a skill verification task
+              {t('dashboard.submitSkillTask')}
             </button>{' '}
-            to build a verified trust score, then browse <Link to="/marketplace">open gigs</Link>.
+            {t('dashboard.workerGetStartedAfter')}{' '}
+            <Link to="/marketplace">{t('dashboard.openGigsLink')}</Link>.
           </p>
         </div>
       )}
@@ -152,17 +158,17 @@ const Dashboard = () => {
       {role === 'admin' && !tasksLoading && pendingReviews.length > 0 && (
         <div className="section">
           <p>
-            You have {pendingReviews.length} task(s) awaiting review.{' '}
+            {t('dashboard.pendingTasksNotice', { count: pendingReviews.length })}{' '}
             <button type="button" className="btn-text" onClick={() => setShowReviewModal(true)}>
-              Review now
+              {t('dashboard.reviewNow')}
             </button>
           </p>
         </div>
       )}
 
       <div className="section">
-        <h2>Your matches</h2>
-        {matches.length === 0 && <p className="muted">No matches yet.</p>}
+        <h2>{t('dashboard.yourMatches')}</h2>
+        {matches.length === 0 && <p className="muted">{t('dashboard.noMatchesYet')}</p>}
         {matches.map((match) => {
           const counterparty = role === 'client' ? match.worker : match.gig?.client;
           return (
@@ -179,9 +185,9 @@ const Dashboard = () => {
 
       {role === 'worker' && (
         <div className="section">
-          <h2>Skills</h2>
+          <h2>{t('dashboard.skills')}</h2>
           {verifiedSkills.length === 0 ? (
-            <p className="muted">No verified skills yet.</p>
+            <p className="muted">{t('dashboard.noVerifiedSkills')}</p>
           ) : (
             <div className="skill-tag-list">
               {verifiedSkills.map((us) => (
@@ -193,57 +199,57 @@ const Dashboard = () => {
             </div>
           )}
           <button type="button" className="btn-text" onClick={() => setShowSkillModal(true)}>
-            + Add new skill
+            {t('dashboard.addNewSkill')}
           </button>
         </div>
       )}
 
       {role === 'admin' && (
         <div className="section">
-          <h2>Skill reviews</h2>
-          {tasksLoading && <p className="muted">Loading...</p>}
+          <h2>{t('dashboard.skillReviews')}</h2>
+          {tasksLoading && <p className="muted">{t('marketplace.gigFeed.loading')}</p>}
           {!tasksLoading &&
             (pendingReviews.length === 0 ? (
-              <p className="muted">Nothing to review right now.</p>
+              <p className="muted">{t('dashboard.nothingToReview')}</p>
             ) : (
-              <p className="muted">{pendingReviews.length} task(s) awaiting your review.</p>
+              <p className="muted">{t('dashboard.tasksAwaitingReview', { count: pendingReviews.length })}</p>
             ))}
           <button type="button" className="btn-text" onClick={() => setShowReviewModal(true)}>
-            Review submissions
+            {t('dashboard.reviewSubmissions')}
           </button>
         </div>
       )}
 
       {role === 'admin' && (
         <div className="section">
-          <h2>Gig approvals</h2>
-          {gigsLoading && <p className="muted">Loading...</p>}
+          <h2>{t('dashboard.gigApprovals')}</h2>
+          {gigsLoading && <p className="muted">{t('marketplace.gigFeed.loading')}</p>}
           {!gigsLoading &&
             (pendingGigs.length === 0 ? (
-              <p className="muted">Nothing to review right now.</p>
+              <p className="muted">{t('dashboard.nothingToReview')}</p>
             ) : (
-              <p className="muted">{pendingGigs.length} gig(s) awaiting your review.</p>
+              <p className="muted">{t('dashboard.gigsAwaitingReview', { count: pendingGigs.length })}</p>
             ))}
           <button type="button" className="btn-text" onClick={() => setShowGigModal(true)}>
-            Review submissions
+            {t('dashboard.reviewSubmissions')}
           </button>
         </div>
       )}
 
       {showSkillModal && (
-        <Modal title="Add a new skill" onClose={() => setShowSkillModal(false)}>
+        <Modal title={t('dashboard.addSkillModalTitle')} onClose={() => setShowSkillModal(false)}>
           <SkillVerificationForm tasks={tasks} onSubmitted={refreshTasks} />
         </Modal>
       )}
 
       {showReviewModal && (
-        <Modal title="Skill verification reviews" onClose={() => setShowReviewModal(false)}>
+        <Modal title={t('dashboard.skillReviewModalTitle')} onClose={() => setShowReviewModal(false)}>
           <AdminReviewQueue tasks={tasks} onReviewed={refreshTasks} />
         </Modal>
       )}
 
       {showGigModal && (
-        <Modal title="Gig approvals" onClose={() => setShowGigModal(false)}>
+        <Modal title={t('dashboard.gigApprovalModalTitle')} onClose={() => setShowGigModal(false)}>
           <GigApprovalQueue gigs={gigs} onReviewed={refreshGigs} />
         </Modal>
       )}

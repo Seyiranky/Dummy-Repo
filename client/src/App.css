@@ -199,11 +199,38 @@
   font-size: 0.85rem;
 }
 
+.sidebar-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sidebar-footer-actions .sidebar-logout {
+  flex: 1;
+}
+
 .sidebar-logout {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
+}
+
+.language-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.language-toggle .sidebar-link-icon {
+  width: 16px;
+  height: 16px;
 }
 
 @media (max-width: 720px) {
@@ -287,14 +314,28 @@
 
   .sidebar:not(:hover) .sidebar-link-text,
   .sidebar:not(:hover) .sidebar-badge,
-  .sidebar:not(:hover) .sidebar-user {
+  .sidebar:not(:hover) .sidebar-user,
+  .sidebar:not(:hover) .language-toggle-code {
     display: none;
+  }
+
+  .sidebar:not(:hover) .language-toggle {
+    align-self: center;
+    padding: 0.6rem;
   }
 
   .sidebar:not(:hover) .sidebar-footer,
   .sidebar:not(:hover) .identity {
     align-items: center;
     justify-content: center;
+  }
+
+  .sidebar:not(:hover) .sidebar-footer-actions {
+    flex-direction: column;
+  }
+
+  .sidebar:not(:hover) .sidebar-footer-actions .sidebar-logout {
+    flex: none;
   }
 
   .sidebar:not(:hover) .sidebar-dot {
@@ -374,6 +415,7 @@
 }
 
 .auth-page-form {
+  position: relative;
   flex: 1;
   min-width: 0;
   display: flex;
@@ -381,6 +423,12 @@
   justify-content: center;
   padding: 3rem 2rem;
   background: var(--color-bg-surface);
+}
+
+.auth-page-lang {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
 }
 
 @media (max-width: 860px) {
@@ -910,6 +958,26 @@ textarea:focus {
   flex-wrap: nowrap;
   align-items: center;
   gap: 0.5rem;
+}
+
+.gig-feed-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.gig-feed-near-me {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.gig-feed-near-me input[type='checkbox'] {
+  width: auto;
+  cursor: pointer;
 }
 
 .gig-form-preview {

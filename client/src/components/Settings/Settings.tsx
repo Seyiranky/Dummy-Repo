@@ -1,36 +1,34 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAppSelector } from '../../store/hooks';
 import ProfileEditor from './ProfileEditor';
 import ExportDataButton from './ExportDataButton';
 
 const Settings = () => {
+  const { t } = useTranslation();
   const { role } = useAppSelector((state) => state.auth);
 
   return (
     <div>
-      <h1>Settings</h1>
-      <p className="page-subtitle">Manage your public profile, location visibility, and account data.</p>
+      <h1>{t('settings.title')}</h1>
+      <p className="page-subtitle">{t('settings.subtitle')}</p>
 
       <div className="section">
-        <h2>Profile</h2>
+        <h2>{t('settings.profile')}</h2>
         <p className="muted">
-          {role === 'worker'
-            ? 'Your bio and location appear on your public profile, which clients can see.'
-            : 'Your bio appears on your public profile, which other users can see.'}
+          {role === 'worker' ? t('settings.profileDescWorker') : t('settings.profileDescOther')}
         </p>
         <ProfileEditor />
       </div>
 
       <div className="section">
-        <h2>Security</h2>
-        <p className="muted">
-          Change your password using the same link-based reset flow you'd use if you forgot it.
-        </p>
-        <Link to="/forgot-password">Reset your password</Link>
+        <h2>{t('settings.security')}</h2>
+        <p className="muted">{t('settings.securityDesc')}</p>
+        <Link to="/forgot-password">{t('settings.resetPasswordLink')}</Link>
       </div>
 
       <div className="section">
-        <h2>Your data</h2>
+        <h2>{t('settings.yourData')}</h2>
         <ExportDataButton />
       </div>
     </div>

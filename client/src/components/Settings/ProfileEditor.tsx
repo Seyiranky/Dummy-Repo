@@ -1,16 +1,17 @@
 import { useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchCurrentUser } from '../../store/slices/authSlice';
 import { userApi } from '../../api/userApi';
 import Select from '../common/Select';
 import { KIGALI_LOCATIONS } from '../../constants/locations';
+import { locationName as lookupLocationName } from '../../utils/locationName';
 
-const findLocationName = (lat?: number | null, lng?: number | null) => {
-  const match = KIGALI_LOCATIONS.find((l) => l.lat === lat && l.lng === lng);
-  return match?.name ?? KIGALI_LOCATIONS[0].name;
-};
+const findLocationName = (lat?: number | null, lng?: number | null) =>
+  lookupLocationName(lat, lng) ?? KIGALI_LOCATIONS[0].name;
 
 const ProfileEditor = () => {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const { profile, role } = useAppSelector((state) => state.auth);
   const [bio, setBio] = useState(profile?.bio ?? '');
@@ -41,12 +42,12 @@ const ProfileEditor = () => {
   return (
     <form onSubmit={handleSubmit}>
       <label>
-        Bio
+        {t('settings.bioLabel')}
         <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={2} />
       </label>
       {role === 'worker' && (
         <label>
-          Location
+          {t('settings.locationLabel')}
           <Select
             value={locationName}
             onChange={setLocationName}
@@ -55,9 +56,9 @@ const ProfileEditor = () => {
         </label>
       )}
       <button type="submit" className="btn-primary" disabled={saving}>
-        {saving ? 'Saving...' : 'Save profile'}
+        {saving ? t('settings.saving') : t('settings.saveProfile')}
       </button>
-      {saved && <span className="muted"> Saved.</span>}
+      {saved && <span className="muted"> {t('settings.saved')}</span>}
     </form>
   );
 };
