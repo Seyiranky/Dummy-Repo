@@ -144,6 +144,7 @@ button {
   background-color: var(--color-bg-surface);
   color: var(--color-text);
   cursor: pointer;
+  white-space: nowrap;
   transition:
     border-color 0.2s,
     background-color 0.2s,
