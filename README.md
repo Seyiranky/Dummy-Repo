@@ -119,6 +119,8 @@ After seeding, log in with any demo account. **All demo passwords are `password1
 |------|-------|-------|
 | Admin | `emmanuel@isoko.demo` | Gig approvals, skill reviews, user moderation |
 | Admin | `solange@isoko.demo` | Second admin account |
+| Admin | `abu@isoko.demo` | Admin account |
+| Worker | `seyi@isoko.demo` | Verified digital/web worker |
 | Worker | `eric@isoko.demo` | Verified digital/web worker |
 | Worker | `patrick@isoko.demo` | Verified digital/web worker |
 | Worker | `aline@isoko.demo` | Verified tailoring worker |
