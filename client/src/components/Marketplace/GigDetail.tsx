@@ -1,14 +1,31 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import {
+  Button,
+  Card,
+  Col,
+  Descriptions,
+  Empty,
+  Flex,
+  Result,
+  Row,
+  Skeleton,
+  Space,
+  Steps,
+  Table,
+  Typography,
+} from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import { useAppSelector } from '../../store/hooks';
 import { gigApi } from '../../api/gigApi';
 import { gigApplicationApi } from '../../api/gigApplicationApi';
 import { adminApi } from '../../api/adminApi';
+import PageContainer from '../Layout/PageContainer';
 import IdentityLink from '../common/IdentityLink';
 import GigThumbnail from '../common/GigThumbnail';
+import StatusTag from '../common/StatusTag';
 import ChatThread from '../common/ChatThread';
-import { statusBadgeClass } from '../../utils/statusBadge';
 import { locationName } from '../../utils/locationName';
 import type { Gig, GigApplication } from '../../types';
 
@@ -38,11 +55,13 @@ const GigDetail = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  if (loading) return <p className="muted">{t('marketplace.gigDetail.loading')}</p>;
-  if (!gig) return <p className="form-error">{t('marketplace.gigDetail.notFound')}</p>;
+  if (loading) return <Skeleton active paragraph={{ rows: 6 }} />;
+  if (!gig)
+    return <Result status="404" title={t('marketplace.gigDetail.notFound')} />;
 
   const isOwner = role === 'client' && profile?.id === gig.clientId;
-  const myApplication = role === 'worker' ? applications.find((a) => a.workerId === profile?.id) : undefined;
+  const myApplication =
+    role === 'worker' ? applications.find((a) => a.workerId === profile?.id) : undefined;
   const sortedApplicants = [...applications].sort(
     (a, b) => (b.worker?.trustScore ?? 0) - (a.worker?.trustScore ?? 0),
   );
@@ -69,7 +88,10 @@ const GigDetail = () => {
     }
   };
 
-  const handleApplicationDecision = async (applicationId: string, decision: 'approved' | 'rejected') => {
+  const handleApplicationDecision = async (
+    applicationId: string,
+    decision: 'approved' | 'rejected',
+  ) => {
     setBusyId(applicationId);
     try {
       await gigApplicationApi.reviewApplication(applicationId, decision);
@@ -79,147 +101,200 @@ const GigDetail = () => {
     }
   };
 
-  return (
-    <div>
-      <div className="section">
-        <div className="skill-line">
-          <GigThumbnail gig={gig} size={56} />
-          <div>
-            <span className="card-title">{gig.title}</span>
-            <div className="muted">
-              {gig.skill?.name}
-              {locationName(gig.locationLat, gig.locationLng) && ` · ${locationName(gig.locationLat, gig.locationLng)}`}
-            </div>
-          </div>
-        </div>
-        <p>{gig.description}</p>
-        <div className="card-row">
-          <span className="muted">{t('marketplace.gigDetail.budget', { amount: gig.budget })}</span>
-          <span className={statusBadgeClass(gig.status)}>{gig.status.replace('_', ' ')}</span>
-        </div>
-        {gig.client && (
-          <div>
-            <span className="muted">{t('marketplace.gigDetail.postedBy')} </span>
-            <IdentityLink id={gig.client.id} name={gig.client.name} size={24} />
-          </div>
-        )}
-      </div>
-
-      {role === 'worker' && gig.client && (
-        <div className="section">
-          <h2>{t('marketplace.gigDetail.messageClient')}</h2>
-          <p className="muted">
-            {t('marketplace.gigDetail.messageClientHint', { name: gig.client.name })}
-          </p>
-          <ChatThread
-            recipientId={gig.client.id}
-            recipientName={gig.client.name}
-            placeholder={t('marketplace.gigDetail.messagePlaceholder', { name: gig.client.name })}
-            emptyText={t('marketplace.gigDetail.messageEmpty')}
-          />
-        </div>
-      )}
-
-      {isOwner && gig.status === 'pending_review' && (
-        <div className="section">
-          <p className="muted">{t('marketplace.gigDetail.pendingReviewNotice')}</p>
-        </div>
-      )}
-      {isOwner && gig.status === 'rejected' && (
-        <div className="section">
-          <p className="form-error">{t('marketplace.gigDetail.rejectedNotice')}</p>
-        </div>
-      )}
-
-      {role === 'admin' && gig.status === 'pending_review' && (
-        <div className="section">
-          <h2>{t('marketplace.gigDetail.approveThisGig')}</h2>
-          <p className="muted">{t('marketplace.gigDetail.approveInstructions')}</p>
-          <div className="card-row">
-            <button
-              type="button"
-              className="btn-success"
-              onClick={() => handleGigDecision('approved')}
-              disabled={busyId === id}
+  const applicantColumns: ColumnsType<GigApplication> = [
+    {
+      title: 'Worker',
+      key: 'worker',
+      render: (_, a) =>
+        a.worker ? <IdentityLink id={a.worker.id} name={a.worker.name} size={26} /> : '—',
+    },
+    {
+      title: 'Trust',
+      key: 'trust',
+      width: 90,
+      render: (_, a) => a.worker?.trustScore.toFixed(1) ?? '—',
+    },
+    {
+      title: 'Status',
+      key: 'status',
+      width: 120,
+      render: (_, a) => <StatusTag status={a.status} />,
+    },
+    {
+      title: '',
+      key: 'actions',
+      width: 180,
+      render: (_, a) =>
+        role === 'admin' && a.status === 'pending' ? (
+          <Space>
+            <Button
+              size="small"
+              type="primary"
+              loading={busyId === a.id}
+              onClick={() => handleApplicationDecision(a.id, 'approved')}
             >
               {t('marketplace.gigDetail.approve')}
-            </button>
-            <button
-              type="button"
-              className="btn-danger"
-              onClick={() => handleGigDecision('rejected')}
-              disabled={busyId === id}
+            </Button>
+            <Button
+              size="small"
+              danger
+              loading={busyId === a.id}
+              onClick={() => handleApplicationDecision(a.id, 'rejected')}
             >
               {t('marketplace.gigDetail.reject')}
-            </button>
-          </div>
-        </div>
-      )}
+            </Button>
+          </Space>
+        ) : null,
+    },
+  ];
 
-      {role === 'worker' && (
-        <div className="section">
-          <h2>{t('marketplace.gigDetail.yourApplication')}</h2>
-          {!myApplication && gig.status !== 'open' && (
-            <p className="muted">
-              {gig.status === 'pending_review'
-                ? t('marketplace.gigDetail.awaitingApprovalNotice')
-                : t('marketplace.gigDetail.noLongerAcceptingNotice')}
-            </p>
-          )}
-          {!myApplication && gig.status === 'open' && (
-            <button type="button" className="btn-primary" onClick={handleApply} disabled={applying}>
-              {applying ? t('marketplace.gigDetail.applying') : t('marketplace.gigDetail.applyButton')}
-            </button>
-          )}
-          {myApplication && (
-            <p>
-              {t('marketplace.gigDetail.statusLabel')}{' '}
-              <span className={statusBadgeClass(myApplication.status)}>{myApplication.status}</span>
-            </p>
-          )}
-        </div>
-      )}
-
-      {(role === 'admin' || isOwner) && (
-        <div className="section">
-          <h2>{t('marketplace.gigDetail.applicants', { count: applications.length })}</h2>
-          {applications.length === 0 && <p className="muted">{t('marketplace.gigDetail.noApplicationsYet')}</p>}
-          {sortedApplicants.map((application) => (
-            <div key={application.id} className="card card-row candidate-row">
-              <div className="identity">
-                {application.worker && (
-                  <IdentityLink id={application.worker.id} name={application.worker.name} size={28} />
+  return (
+    <PageContainer
+      title={
+        <Flex align="center" gap={12}>
+          <GigThumbnail gig={gig} size={40} />
+          <span>{gig.title}</span>
+        </Flex>
+      }
+      extra={<StatusTag status={gig.status} />}
+    >
+      <Row gutter={[16, 16]}>
+        <Col xs={24} lg={role === 'worker' && gig.client ? 15 : 24}>
+          <Card>
+            <Descriptions column={{ xs: 1, sm: 2 }} size="small">
+              <Descriptions.Item label={t('marketplace.gigDetail.postedBy')}>
+                {gig.client ? (
+                  <IdentityLink id={gig.client.id} name={gig.client.name} size={22} />
+                ) : (
+                  '—'
                 )}
-                <span className="muted">
-                  {t('marketplace.gigDetail.trustLabel', { score: application.worker?.trustScore.toFixed(1) })}
-                </span>
-                <span className={statusBadgeClass(application.status)}>{application.status}</span>
-              </div>
-              {role === 'admin' && application.status === 'pending' && (
-                <div className="card-row">
-                  <button
-                    type="button"
-                    className="btn-success"
-                    onClick={() => handleApplicationDecision(application.id, 'approved')}
-                    disabled={busyId === application.id}
-                  >
-                    {t('marketplace.gigDetail.approve')}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-danger"
-                    onClick={() => handleApplicationDecision(application.id, 'rejected')}
-                    disabled={busyId === application.id}
-                  >
-                    {t('marketplace.gigDetail.reject')}
-                  </button>
-                </div>
+              </Descriptions.Item>
+              <Descriptions.Item label="Category">{gig.skill?.name ?? '—'}</Descriptions.Item>
+              <Descriptions.Item label="Location">
+                {locationName(gig.locationLat, gig.locationLng) ?? '—'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Budget">
+                {Number(gig.budget).toLocaleString()} RWF
+              </Descriptions.Item>
+            </Descriptions>
+            <Typography.Paragraph style={{ marginTop: 12, marginBottom: 0 }}>
+              {gig.description}
+            </Typography.Paragraph>
+          </Card>
+
+          {isOwner && gig.status === 'pending_review' && (
+            <Card style={{ marginTop: 16 }}>
+              <Typography.Text type="secondary">
+                {t('marketplace.gigDetail.pendingReviewNotice')}
+              </Typography.Text>
+            </Card>
+          )}
+          {isOwner && gig.status === 'rejected' && (
+            <Card style={{ marginTop: 16 }}>
+              <Typography.Text type="danger">
+                {t('marketplace.gigDetail.rejectedNotice')}
+              </Typography.Text>
+            </Card>
+          )}
+
+          {role === 'admin' && gig.status === 'pending_review' && (
+            <Card style={{ marginTop: 16 }} title={t('marketplace.gigDetail.approveThisGig')}>
+              <Typography.Paragraph type="secondary">
+                {t('marketplace.gigDetail.approveInstructions')}
+              </Typography.Paragraph>
+              <Space>
+                <Button
+                  type="primary"
+                  loading={busyId === id}
+                  onClick={() => handleGigDecision('approved')}
+                >
+                  {t('marketplace.gigDetail.approve')}
+                </Button>
+                <Button danger loading={busyId === id} onClick={() => handleGigDecision('rejected')}>
+                  {t('marketplace.gigDetail.reject')}
+                </Button>
+              </Space>
+            </Card>
+          )}
+
+          {role === 'worker' && (
+            <Card style={{ marginTop: 16 }} title={t('marketplace.gigDetail.yourApplication')}>
+              {myApplication ? (
+                <Steps
+                  size="small"
+                  current={
+                    myApplication.status === 'approved'
+                      ? 2
+                      : myApplication.status === 'rejected'
+                        ? 1
+                        : 1
+                  }
+                  status={myApplication.status === 'rejected' ? 'error' : 'process'}
+                  items={[
+                    { title: 'Applied' },
+                    { title: 'Under review' },
+                    { title: 'Approved' },
+                  ]}
+                />
+              ) : gig.status === 'open' ? (
+                <Button type="primary" loading={applying} onClick={handleApply}>
+                  {t('marketplace.gigDetail.applyButton')}
+                </Button>
+              ) : (
+                <Typography.Text type="secondary">
+                  {gig.status === 'pending_review'
+                    ? t('marketplace.gigDetail.awaitingApprovalNotice')
+                    : t('marketplace.gigDetail.noLongerAcceptingNotice')}
+                </Typography.Text>
               )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+            </Card>
+          )}
+
+          {(role === 'admin' || isOwner) && (
+            <Card
+              style={{ marginTop: 16 }}
+              title={t('marketplace.gigDetail.applicants', { count: applications.length })}
+            >
+              {applications.length === 0 ? (
+                <Empty
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description={t('marketplace.gigDetail.noApplicationsYet')}
+                />
+              ) : (
+                <Table
+                  rowKey="id"
+                  size="small"
+                  pagination={false}
+                  columns={applicantColumns}
+                  dataSource={sortedApplicants}
+                />
+              )}
+            </Card>
+          )}
+        </Col>
+
+        {role === 'worker' && gig.client && (
+          <Col xs={24} lg={9}>
+            <Card
+              title={t('marketplace.gigDetail.messageClient')}
+              style={{ position: 'sticky', top: 88 }}
+            >
+              <Typography.Paragraph type="secondary" style={{ fontSize: 13 }}>
+                {t('marketplace.gigDetail.messageClientHint', { name: gig.client.name })}
+              </Typography.Paragraph>
+              <ChatThread
+                recipientId={gig.client.id}
+                recipientName={gig.client.name}
+                placeholder={t('marketplace.gigDetail.messagePlaceholder', {
+                  name: gig.client.name,
+                })}
+                emptyText={t('marketplace.gigDetail.messageEmpty')}
+              />
+            </Card>
+          </Col>
+        )}
+      </Row>
+    </PageContainer>
   );
 };
 

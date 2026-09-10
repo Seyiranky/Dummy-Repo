@@ -1,22 +1,26 @@
-import { NavLink } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Segmented } from 'antd';
 
-const linkClass = ({ isActive }: { isActive: boolean }) => `toggle-option${isActive ? ' active' : ''}`;
+const OPTIONS = [
+  { label: 'Overview', value: '/admin' },
+  { label: 'Users', value: '/admin/users' },
+  { label: 'Pending gigs', value: '/admin/gigs/pending' },
+  { label: 'Completed gigs', value: '/admin/gigs/completed' },
+];
 
-const AdminNav = () => (
-  <nav className="toggle admin-nav" role="tablist">
-    <NavLink to="/admin" end className={linkClass}>
-      Overview
-    </NavLink>
-    <NavLink to="/admin/users" className={linkClass}>
-      Users
-    </NavLink>
-    <NavLink to="/admin/gigs/pending" className={linkClass}>
-      Pending gigs
-    </NavLink>
-    <NavLink to="/admin/gigs/completed" className={linkClass}>
-      Completed gigs
-    </NavLink>
-  </nav>
-);
+const AdminNav = () => {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const value = OPTIONS.slice().reverse().find((o) => pathname.startsWith(o.value))?.value ?? '/admin';
+
+  return (
+    <Segmented
+      value={value}
+      onChange={(v) => navigate(v as string)}
+      options={OPTIONS}
+      style={{ marginBottom: 20 }}
+    />
+  );
+};
 
 export default AdminNav;

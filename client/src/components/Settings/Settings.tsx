@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Card, Space, Typography } from 'antd';
 import { useAppSelector } from '../../store/hooks';
+import PageContainer from '../Layout/PageContainer';
 import ProfileEditor from './ProfileEditor';
 import ExportDataButton from './ExportDataButton';
 
@@ -9,29 +11,27 @@ const Settings = () => {
   const { role } = useAppSelector((state) => state.auth);
 
   return (
-    <div>
-      <h1>{t('settings.title')}</h1>
-      <p className="page-subtitle">{t('settings.subtitle')}</p>
+    <PageContainer title={t('settings.title')} subtitle={t('settings.subtitle')}>
+      <Space direction="vertical" size={16} style={{ width: '100%', maxWidth: 640 }}>
+        <Card title={t('settings.profile')}>
+          <Typography.Paragraph type="secondary">
+            {role === 'worker' ? t('settings.profileDescWorker') : t('settings.profileDescOther')}
+          </Typography.Paragraph>
+          <ProfileEditor />
+        </Card>
 
-      <div className="section">
-        <h2>{t('settings.profile')}</h2>
-        <p className="muted">
-          {role === 'worker' ? t('settings.profileDescWorker') : t('settings.profileDescOther')}
-        </p>
-        <ProfileEditor />
-      </div>
+        <Card title={t('settings.security')}>
+          <Typography.Paragraph type="secondary">
+            {t('settings.securityDesc')}
+          </Typography.Paragraph>
+          <Link to="/forgot-password">{t('settings.resetPasswordLink')}</Link>
+        </Card>
 
-      <div className="section">
-        <h2>{t('settings.security')}</h2>
-        <p className="muted">{t('settings.securityDesc')}</p>
-        <Link to="/forgot-password">{t('settings.resetPasswordLink')}</Link>
-      </div>
-
-      <div className="section">
-        <h2>{t('settings.yourData')}</h2>
-        <ExportDataButton />
-      </div>
-    </div>
+        <Card title={t('settings.yourData')}>
+          <ExportDataButton />
+        </Card>
+      </Space>
+    </PageContainer>
   );
 };
 

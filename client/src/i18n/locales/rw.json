@@ -62,7 +62,9 @@
     "notifications": "Amatangazo",
     "admin": "Ubuyobozi",
     "settings": "Igenamiterere",
-    "logout": "Sohoka"
+    "logout": "Sohoka",
+    "gigDetails": "Amakuru y'umurimo",
+    "profile": "Umwirondoro"
   },
   "dashboard": {
     "welcome": "Murakaza neza, {{name}}",
@@ -87,7 +89,7 @@
     "noMatchesYet": "Nta mirimo urahurirwaho.",
     "skills": "Ubuhanga",
     "noVerifiedSkills": "Nta buhanga bwemejwe burahaba.",
-    "addNewSkill": "+ Ongeraho ubundi buhanga",
+    "addNewSkill": "Ongeraho ubuhanga",
     "skillReviews": "Isuzuma ry'ubuhanga",
     "nothingToReview": "Nta kintu gitegereje isuzuma ubu.",
     "tasksAwaitingReview": "{{count}} bikorwa bitegereje isuzuma ryawe.",

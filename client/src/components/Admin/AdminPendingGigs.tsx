@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
+import { Card, Space, Table } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import { adminApi } from '../../api/adminApi';
-import { statusBadgeClass } from '../../utils/statusBadge';
+import PageContainer from '../Layout/PageContainer';
 import IdentityLink from '../common/IdentityLink';
 import GigThumbnail from '../common/GigThumbnail';
+import StatusTag from '../common/StatusTag';
 import GigApprovalQueue from './GigApprovalQueue';
 import AdminNav from './AdminNav';
 import type { Gig } from '../../types';
@@ -24,59 +27,54 @@ const AdminPendingGigs = () => {
   const pendingReview = gigs.filter((g) => g.status === 'pending_review');
   const inProgress = gigs.filter((g) => g.status === 'open' || g.status === 'matched');
 
+  const columns: ColumnsType<Gig> = [
+    { title: 'Title', dataIndex: 'title', key: 'title' },
+    {
+      title: 'Client',
+      key: 'client',
+      render: (_, g) =>
+        g.client ? <IdentityLink id={g.client.id} name={g.client.name} size={22} /> : '—',
+    },
+    {
+      title: 'Category',
+      key: 'category',
+      render: (_, g) => (
+        <Space size={8}>
+          <GigThumbnail gig={g} size={22} />
+          {g.skill?.name}
+        </Space>
+      ),
+    },
+    {
+      title: 'Budget',
+      key: 'budget',
+      align: 'right',
+      render: (_, g) => `${Number(g.budget).toLocaleString()} RWF`,
+    },
+    { title: 'Status', key: 'status', render: (_, g) => <StatusTag status={g.status} /> },
+  ];
+
   return (
-    <div>
-      <div className="section">
-        <h1>Pending gigs</h1>
-        <p className="muted">Gigs awaiting approval, plus gigs already live but not yet completed.</p>
-      </div>
-
+    <PageContainer
+      title="Pending gigs"
+      subtitle="Gigs awaiting approval, plus gigs already live but not yet completed."
+    >
       <AdminNav />
-
-      <div className="section">
-        <h2>Awaiting approval ({pendingReview.length})</h2>
-        {loading ? <p className="muted">Loading...</p> : <GigApprovalQueue gigs={gigs} onReviewed={refresh} />}
-      </div>
-
-      <div className="section">
-        <h2>In progress ({inProgress.length})</h2>
-        {loading && <p className="muted">Loading...</p>}
-        {!loading && inProgress.length === 0 && <p className="muted">Nothing in progress right now.</p>}
-        {!loading && inProgress.length > 0 && (
-          <div className="table-wrap">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Title</th>
-                  <th>Client</th>
-                  <th>Category</th>
-                  <th>Budget</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {inProgress.map((g) => (
-                  <tr key={g.id}>
-                    <td>{g.title}</td>
-                    <td>{g.client ? <IdentityLink id={g.client.id} name={g.client.name} size={24} /> : 'Unknown'}</td>
-                    <td>
-                      <div className="skill-line">
-                        <GigThumbnail gig={g} size={24} />
-                        {g.skill?.name}
-                      </div>
-                    </td>
-                    <td>{Number(g.budget).toLocaleString()} RWF</td>
-                    <td>
-                      <span className={statusBadgeClass(g.status)}>{g.status}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
+      <Card title={`Awaiting approval (${pendingReview.length})`}>
+        <GigApprovalQueue gigs={gigs} onReviewed={refresh} />
+      </Card>
+      <Card title={`In progress (${inProgress.length})`} style={{ marginTop: 16 }}>
+        <Table
+          rowKey="id"
+          loading={loading}
+          columns={columns}
+          dataSource={inProgress}
+          pagination={{ pageSize: 8, hideOnSinglePage: true }}
+          locale={{ emptyText: 'Nothing in progress right now.' }}
+          scroll={{ x: 'max-content' }}
+        />
+      </Card>
+    </PageContainer>
   );
 };
 

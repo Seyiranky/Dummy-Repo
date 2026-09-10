@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
+import { Card, Table, Typography } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import { adminApi } from '../../api/adminApi';
-import { statusBadgeClass } from '../../utils/statusBadge';
+import PageContainer from '../Layout/PageContainer';
 import IdentityLink from '../common/IdentityLink';
+import StatusTag from '../common/StatusTag';
 import AdminNav from './AdminNav';
 import type { Gig } from '../../types';
 
@@ -18,65 +21,65 @@ const AdminCompletedGigs = () => {
 
   const completed = gigs.filter((g) => g.status === 'completed');
 
+  const columns: ColumnsType<Gig> = [
+    { title: 'Gig', dataIndex: 'title', key: 'title' },
+    {
+      title: 'Client',
+      key: 'client',
+      render: (_, g) =>
+        g.client ? <IdentityLink id={g.client.id} name={g.client.name} size={22} /> : '—',
+    },
+    {
+      title: 'Completed by',
+      key: 'worker',
+      render: (_, g) => {
+        const w = g.matches?.find((m) => m.status === 'completed')?.worker;
+        return w ? <IdentityLink id={w.id} name={w.name} size={22} /> : '—';
+      },
+    },
+    {
+      title: 'Budget',
+      key: 'budget',
+      align: 'right',
+      render: (_, g) => `${Number(g.budget).toLocaleString()} RWF`,
+    },
+    {
+      title: 'Payment',
+      key: 'payment',
+      render: (_, g) => {
+        const tx = g.matches?.find((m) => m.status === 'completed')?.transaction;
+        return tx ? (
+          <StatusTag status={tx.status} />
+        ) : (
+          <Typography.Text type="secondary">No transaction</Typography.Text>
+        );
+      },
+    },
+    {
+      title: 'Completed',
+      key: 'date',
+      render: (_, g) => {
+        const m = g.matches?.find((x) => x.status === 'completed');
+        return m ? new Date(m.updatedAt).toLocaleDateString() : '—';
+      },
+    },
+  ];
+
   return (
-    <div>
-      <div className="section">
-        <h1>Completed gigs</h1>
-        <p className="muted">Finished gigs and who completed them.</p>
-      </div>
-
+    <PageContainer title="Completed gigs" subtitle="Finished gigs and who completed them.">
       <AdminNav />
-
-      {loading && <p className="muted">Loading...</p>}
-      {!loading && completed.length === 0 && <p className="muted">No gigs have been completed yet.</p>}
-      {!loading && completed.length > 0 && (
-        <div className="table-wrap">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Gig</th>
-                <th>Client</th>
-                <th>Completed by</th>
-                <th>Budget</th>
-                <th>Payment</th>
-                <th>Completed</th>
-              </tr>
-            </thead>
-            <tbody>
-              {completed.map((g) => {
-                const match = g.matches?.find((m) => m.status === 'completed');
-                return (
-                  <tr key={g.id}>
-                    <td>{g.title}</td>
-                    <td>
-                      {g.client ? <IdentityLink id={g.client.id} name={g.client.name} size={24} /> : 'Unknown'}
-                    </td>
-                    <td>
-                      {match?.worker ? (
-                        <IdentityLink id={match.worker.id} name={match.worker.name} size={24} />
-                      ) : (
-                        'Unknown'
-                      )}
-                    </td>
-                    <td>{Number(g.budget).toLocaleString()} RWF</td>
-                    <td>
-                      {match?.transaction ? (
-                        <span className={statusBadgeClass(match.transaction.status)}>
-                          {match.transaction.status}
-                        </span>
-                      ) : (
-                        <span className="muted">No transaction</span>
-                      )}
-                    </td>
-                    <td>{match ? new Date(match.updatedAt).toLocaleDateString() : '—'}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+      <Card>
+        <Table
+          rowKey="id"
+          loading={loading}
+          columns={columns}
+          dataSource={completed}
+          pagination={{ pageSize: 10, hideOnSinglePage: true }}
+          locale={{ emptyText: 'No gigs have been completed yet.' }}
+          scroll={{ x: 'max-content' }}
+        />
+      </Card>
+    </PageContainer>
   );
 };
 

@@ -1,16 +1,26 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  Button,
+  Card,
+  Col,
+  Empty,
+  Flex,
+  Input,
+  Modal,
+  Rate,
+  Row,
+  Space,
+  Typography,
+} from 'antd';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchMatches } from '../../store/slices/matchSlice';
 import { matchApi } from '../../api/matchApi';
 import { transactionApi } from '../../api/transactionApi';
 import { reviewApi } from '../../api/reviewApi';
-import Select from '../common/Select';
 import IdentityLink from '../common/IdentityLink';
-import Modal from '../common/Modal';
-import { statusBadgeClass } from '../../utils/statusBadge';
+import StatusTag from '../common/StatusTag';
 import type { Match, MatchStatus } from '../../types';
-
-const RATING_OPTIONS = [5, 4, 3, 2, 1].map((n) => ({ value: String(n), label: String(n) }));
 
 const ReviewModal = ({
   match,
@@ -37,18 +47,29 @@ const ReviewModal = ({
   };
 
   return (
-    <Modal title={`Review "${match.gig?.title ?? 'gig'}"`} onClose={onClose}>
-      <label>
-        Rating
-        <Select value={String(rating)} onChange={(v) => setRating(Number(v))} options={RATING_OPTIONS} />
-      </label>
-      <label>
-        Comment (optional)
-        <input value={comment} onChange={(e) => setComment(e.target.value)} />
-      </label>
-      <button type="button" className="btn-primary" onClick={handleSubmit} disabled={submitting}>
-        {submitting ? 'Submitting...' : 'Leave review'}
-      </button>
+    <Modal
+      open
+      title={`Review “${match.gig?.title ?? 'gig'}”`}
+      okText="Leave review"
+      confirmLoading={submitting}
+      onOk={handleSubmit}
+      onCancel={onClose}
+    >
+      <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+        <div>
+          <Typography.Text type="secondary">Rating</Typography.Text>
+          <br />
+          <Rate value={rating} onChange={setRating} />
+        </div>
+        <div>
+          <Typography.Text type="secondary">Comment (optional)</Typography.Text>
+          <Input.TextArea
+            rows={3}
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+          />
+        </div>
+      </Space>
     </Modal>
   );
 };
@@ -89,70 +110,87 @@ const MatchList = () => {
   if (!profile) return null;
   const isWorker = profile.role === 'worker';
 
+  if (matches.length === 0) {
+    return (
+      <Card>
+        <Empty description="No matches yet — post or get matched to a gig first." />
+      </Card>
+    );
+  }
+
   return (
     <div>
-      {matches.length === 0 && <p className="muted">No matches yet — post or get matched to a gig first.</p>}
-      <div className="card-grid">
+      <Row gutter={[16, 16]}>
         {matches.map((match) => {
           const alreadyReviewed = match.reviews?.some((r) => r.authorId === profile.id);
           const counterparty = isWorker ? match.gig?.client : match.worker;
           return (
-            <div key={match.id} className="card match-card">
-              <div className="card-row">
-                <span className="card-title">{match.gig?.title ?? 'Gig'}</span>
-                <span className={statusBadgeClass(match.status)}>{match.status}</span>
-              </div>
-              {counterparty ? (
-                <IdentityLink id={counterparty.id} name={counterparty.name} size={24} />
-              ) : (
-                <div className="muted">Unknown counterparty</div>
-              )}
+            <Col xs={24} sm={12} lg={8} key={match.id}>
+              <Card style={{ height: '100%' }}>
+                <Flex justify="space-between" align="flex-start" gap={8}>
+                  <Link to={`/gigs/${match.gigId}`} style={{ fontWeight: 600 }}>
+                    {match.gig?.title ?? 'Gig'}
+                  </Link>
+                  <StatusTag status={match.status} />
+                </Flex>
+                <div style={{ margin: '10px 0' }}>
+                  {counterparty ? (
+                    <IdentityLink id={counterparty.id} name={counterparty.name} size={24} />
+                  ) : (
+                    <Typography.Text type="secondary">Unknown counterparty</Typography.Text>
+                  )}
+                </div>
 
-              <div className="match-card-footer">
                 {match.status === 'accepted' && (
-                  <button
-                    type="button"
-                    className="btn-primary"
+                  <Button
+                    type="primary"
+                    block
+                    loading={busyId === match.id}
                     onClick={() => transition(match.id, 'completed')}
-                    disabled={busyId === match.id}
                   >
                     Mark completed
-                  </button>
+                  </Button>
                 )}
 
                 {match.status === 'completed' && match.transaction && (
-                  <div>
-                    <p className="muted">
+                  <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                    <Typography.Text type="secondary">
                       Payment ({match.transaction.provider}):{' '}
-                      <span className={statusBadgeClass(match.transaction.status)}>{match.transaction.status}</span>
-                    </p>
+                      <StatusTag status={match.transaction.status} />
+                    </Typography.Text>
                     {match.transaction.status === 'initiated' && (
-                      <button
-                        type="button"
-                        className="btn-primary"
+                      <Button
+                        type="primary"
+                        block
+                        loading={busyId === match.transaction.id}
                         onClick={() => confirmPayment(match.transaction!.id)}
-                        disabled={busyId === match.transaction.id}
                       >
                         Confirm payment
-                      </button>
+                      </Button>
                     )}
                     {match.transaction.status === 'confirmed' &&
                       (alreadyReviewed ? (
-                        <p className="muted">You've reviewed this match.</p>
+                        <Typography.Text type="secondary">
+                          You've reviewed this match.
+                        </Typography.Text>
                       ) : (
-                        <button type="button" className="btn-primary" onClick={() => setReviewMatch(match)}>
+                        <Button block onClick={() => setReviewMatch(match)}>
                           Leave review
-                        </button>
+                        </Button>
                       ))}
-                  </div>
+                  </Space>
                 )}
-              </div>
-            </div>
+              </Card>
+            </Col>
           );
         })}
-      </div>
+      </Row>
       {reviewMatch && (
-        <ReviewModal match={reviewMatch} onClose={() => setReviewMatch(null)} onSubmitted={refresh} />
+        <ReviewModal
+          match={reviewMatch}
+          onClose={() => setReviewMatch(null)}
+          onSubmitted={refresh}
+        />
       )}
     </div>
   );

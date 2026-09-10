@@ -1,10 +1,10 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState } from 'react';
+import { Alert, Button, Divider, Form, Input, List, Select, Typography } from 'antd';
 import { skillApi } from '../../api/skillApi';
 import { skillTaskApi } from '../../api/skillTaskApi';
-import Select from '../common/Select';
 import IdentityLink from '../common/IdentityLink';
 import SkillThumbnail from '../common/SkillThumbnail';
-import { statusBadgeClass } from '../../utils/statusBadge';
+import StatusTag from '../common/StatusTag';
 import type { Skill, SkillTask } from '../../types';
 
 interface SkillVerificationFormProps {
@@ -12,29 +12,32 @@ interface SkillVerificationFormProps {
   onSubmitted: () => void;
 }
 
+interface SubmitValues {
+  skillId: string;
+  evidenceUrl: string;
+  notes?: string;
+}
+
 const SkillVerificationForm = ({ tasks, onSubmitted }: SkillVerificationFormProps) => {
+  const [form] = Form.useForm<SubmitValues>();
   const [skills, setSkills] = useState<Skill[]>([]);
-  const [skillId, setSkillId] = useState('');
-  const [evidenceUrl, setEvidenceUrl] = useState('');
-  const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    skillApi.listSkills().then((data) => {
-      setSkills(data);
-      if (data.length > 0) setSkillId(data[0].id);
-    });
+    skillApi.listSkills().then(setSkills);
   }, []);
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const onFinish = async (values: SubmitValues) => {
     setError(null);
     setSubmitting(true);
     try {
-      await skillTaskApi.submitTask({ skillId, evidenceUrl, notes: notes || undefined });
-      setEvidenceUrl('');
-      setNotes('');
+      await skillTaskApi.submitTask({
+        skillId: values.skillId,
+        evidenceUrl: values.evidenceUrl,
+        notes: values.notes || undefined,
+      });
+      form.resetFields(['evidenceUrl', 'notes']);
       onSubmitted();
     } catch {
       setError('Could not submit your task. An admin may not be available right now.');
@@ -45,53 +48,47 @@ const SkillVerificationForm = ({ tasks, onSubmitted }: SkillVerificationFormProp
 
   return (
     <div>
-      <form onSubmit={handleSubmit}>
-        <label>
-          Skill category
-          <Select
-            value={skillId}
-            onChange={setSkillId}
-            options={skills.map((skill) => ({ value: skill.id, label: skill.name }))}
-          />
-        </label>
-        <label>
-          Evidence (link to photo, video, or file)
-          <input
-            type="url"
-            value={evidenceUrl}
-            onChange={(e) => setEvidenceUrl(e.target.value)}
-            placeholder="https://..."
-            required
-          />
-        </label>
-        <label>
-          Notes
-          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
-        </label>
-        {error && <p className="form-error">{error}</p>}
-        <button type="submit" className="btn-primary" disabled={submitting || !skillId}>
-          {submitting ? 'Submitting...' : 'Submit for review'}
-        </button>
-      </form>
+      <Form form={form} layout="vertical" requiredMark={false} onFinish={onFinish}>
+        <Form.Item name="skillId" label="Skill category" rules={[{ required: true }]}>
+          <Select options={skills.map((s) => ({ value: s.id, label: s.name }))} />
+        </Form.Item>
+        <Form.Item
+          name="evidenceUrl"
+          label="Evidence (link to photo, video, or file)"
+          rules={[{ required: true, type: 'url' }]}
+        >
+          <Input placeholder="https://..." />
+        </Form.Item>
+        <Form.Item name="notes" label="Notes">
+          <Input.TextArea rows={2} />
+        </Form.Item>
+        {error && <Alert type="error" showIcon message={error} style={{ marginBottom: 16 }} />}
+        <Button type="primary" htmlType="submit" loading={submitting}>
+          Submit for review
+        </Button>
+      </Form>
 
-      <h2>Your submissions</h2>
-      {tasks.length === 0 && <p className="muted">No submissions yet.</p>}
-      {tasks.map((task) => (
-        <div key={task.id} className="card card-row">
-          <div className="skill-line">
-            <SkillThumbnail category={task.skill?.category} />
-            <div>
-              <span className="card-title">{task.skill?.name}</span>
-              {task.reviewer ? (
-                <IdentityLink id={task.reviewer.id} name={task.reviewer.name} size={24} />
-              ) : (
-                <div className="muted">Reviewer unassigned</div>
-              )}
-            </div>
-          </div>
-          <span className={statusBadgeClass(task.status)}>{task.status}</span>
-        </div>
-      ))}
+      <Divider />
+      <Typography.Title level={5}>Your submissions</Typography.Title>
+      <List
+        dataSource={tasks}
+        locale={{ emptyText: 'No submissions yet.' }}
+        renderItem={(task) => (
+          <List.Item actions={[<StatusTag key="s" status={task.status} />]}>
+            <List.Item.Meta
+              avatar={<SkillThumbnail category={task.skill?.category} size={32} />}
+              title={task.skill?.name}
+              description={
+                task.reviewer ? (
+                  <IdentityLink id={task.reviewer.id} name={task.reviewer.name} size={20} />
+                ) : (
+                  <Typography.Text type="secondary">Reviewer unassigned</Typography.Text>
+                )
+              }
+            />
+          </List.Item>
+        )}
+      />
     </div>
   );
 };

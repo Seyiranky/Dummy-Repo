@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Card, Col, Empty, Flex, Row, Skeleton, Switch, Tooltip, Typography } from 'antd';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchGigs } from '../../store/slices/gigSlice';
-import { statusBadgeClass } from '../../utils/statusBadge';
 import { locationName } from '../../utils/locationName';
 import { distanceKm } from '../../utils/distance';
 import GigThumbnail from '../common/GigThumbnail';
+import StatusTag from '../common/StatusTag';
 
 const GigFeed = () => {
   const { t } = useTranslation();
@@ -41,50 +42,81 @@ const GigFeed = () => {
   return (
     <div>
       {role === 'worker' && (
-        <div className="gig-feed-controls">
-          <label className="gig-feed-near-me" title={!hasWorkerLocation ? t('marketplace.gigFeed.setLocationHint') : undefined}>
-            <input
-              type="checkbox"
+        <Flex align="center" gap={10} style={{ marginBottom: 16 }}>
+          <Tooltip title={!hasWorkerLocation ? t('marketplace.gigFeed.setLocationHint') : undefined}>
+            <Switch
+              size="small"
               checked={nearMe}
-              onChange={(e) => setNearMe(e.target.checked)}
               disabled={!hasWorkerLocation}
+              onChange={setNearMe}
             />
+          </Tooltip>
+          <Typography.Text type={hasWorkerLocation ? undefined : 'secondary'}>
             {t('marketplace.gigFeed.nearMe')}
-          </label>
-          {!hasWorkerLocation && <span className="muted">{t('marketplace.gigFeed.setLocationHint')}</span>}
-        </div>
+          </Typography.Text>
+        </Flex>
       )}
-      {status === 'loading' && <p className="muted">{t('marketplace.gigFeed.loading')}</p>}
-      {visibleGigs.length === 0 && status !== 'loading' && <p className="muted">{t('marketplace.gigFeed.empty')}</p>}
-      <div className="card-grid">
-        {visibleGigs.map((gig) => (
-          <div key={gig.id} className="card gig-card">
-            <div className="skill-line">
-              <GigThumbnail gig={gig} size={48} />
-              <div>
-                <span className="card-title">{gig.title}</span>
-                <div className="muted">
-                  {gig.skill?.name}
-                  {locationName(gig.locationLat, gig.locationLng) &&
-                    ` · ${locationName(gig.locationLat, gig.locationLng)}`}
-                  {sortByDistance &&
-                    ` · ${t('marketplace.gigFeed.distanceAway', {
-                      distance: distanceKm(workerLat!, workerLng!, gig.locationLat, gig.locationLng).toFixed(1),
-                    })}`}
-                </div>
-              </div>
-            </div>
-            <p className="gig-card-description">{gig.description}</p>
-            <div className="gig-card-footer">
-              <div className="card-row">
-                <span className="muted">{t('marketplace.gigFeed.budget', { amount: gig.budget })}</span>
-                <span className={statusBadgeClass(gig.status)}>{gig.status.replace('_', ' ')}</span>
-              </div>
-              <Link to={`/gigs/${gig.id}`}>{t('marketplace.gigFeed.viewDetails')}</Link>
-            </div>
-          </div>
-        ))}
-      </div>
+
+      {status === 'loading' ? (
+        <Row gutter={[16, 16]}>
+          {[0, 1, 2].map((i) => (
+            <Col xs={24} sm={12} lg={8} key={i}>
+              <Card>
+                <Skeleton active />
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      ) : visibleGigs.length === 0 ? (
+        <Card>
+          <Empty description={t('marketplace.gigFeed.empty')} />
+        </Card>
+      ) : (
+        <Row gutter={[16, 16]}>
+          {visibleGigs.map((gig) => (
+            <Col xs={24} sm={12} lg={8} key={gig.id}>
+              <Card hoverable style={{ height: '100%' }} styles={{ body: { display: 'flex', flexDirection: 'column', gap: 12, height: '100%' } }}>
+                <Flex gap={12} align="flex-start">
+                  <GigThumbnail gig={gig} size={44} />
+                  <div style={{ minWidth: 0 }}>
+                    <Typography.Text strong ellipsis style={{ display: 'block' }}>
+                      {gig.title}
+                    </Typography.Text>
+                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                      {gig.skill?.name}
+                      {locationName(gig.locationLat, gig.locationLng) &&
+                        ` · ${locationName(gig.locationLat, gig.locationLng)}`}
+                      {sortByDistance &&
+                        ` · ${t('marketplace.gigFeed.distanceAway', {
+                          distance: distanceKm(
+                            workerLat!,
+                            workerLng!,
+                            gig.locationLat,
+                            gig.locationLng,
+                          ).toFixed(1),
+                        })}`}
+                    </Typography.Text>
+                  </div>
+                </Flex>
+                <Typography.Paragraph
+                  type="secondary"
+                  ellipsis={{ rows: 2 }}
+                  style={{ margin: 0, fontSize: 13 }}
+                >
+                  {gig.description}
+                </Typography.Paragraph>
+                <Flex justify="space-between" align="center" style={{ marginTop: 'auto' }}>
+                  <Typography.Text strong>
+                    {Number(gig.budget).toLocaleString()} RWF
+                  </Typography.Text>
+                  <StatusTag status={gig.status} />
+                </Flex>
+                <Link to={`/gigs/${gig.id}`}>{t('marketplace.gigFeed.viewDetails')} →</Link>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      )}
     </div>
   );
 };

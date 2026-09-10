@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { Card, Col, Row, Skeleton, Statistic } from 'antd';
 import { adminApi } from '../../api/adminApi';
+import PageContainer from '../Layout/PageContainer';
 import AdminNav from './AdminNav';
 import type { Gig, User } from '../../types';
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
   const [gigs, setGigs] = useState<Gig[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,60 +21,41 @@ const AdminDashboard = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) {
-    return <p className="muted">Loading admin dashboard...</p>;
-  }
-
-  const roleCounts = users.reduce<Record<string, number>>((acc, u) => {
-    acc[u.role] = (acc[u.role] ?? 0) + 1;
-    return acc;
-  }, {});
   const suspendedCount = users.filter((u) => u.status === 'suspended').length;
   const pendingGigCount = gigs.filter((g) => g.status === 'pending_review').length;
   const inProgressGigCount = gigs.filter((g) => g.status === 'open' || g.status === 'matched').length;
   const completedGigCount = gigs.filter((g) => g.status === 'completed').length;
 
+  const tiles = [
+    { label: 'Users', value: users.length, to: '/admin/users' },
+    { label: 'Suspended accounts', value: suspendedCount, to: '/admin/users' },
+    { label: 'Pending gig approvals', value: pendingGigCount, to: '/admin/gigs/pending' },
+    { label: 'Gigs in progress', value: inProgressGigCount, to: '/admin/gigs/pending' },
+    { label: 'Completed gigs', value: completedGigCount, to: '/admin/gigs/completed' },
+  ];
+
   return (
-    <div>
-      <div className="section">
-        <h1>Admin dashboard</h1>
-        <p className="muted">Platform activity at a glance.</p>
-        <div className="card-row">
-          {Object.entries(roleCounts).map(([role, count]) => (
-            <span key={role} className="badge badge-info">
-              {count} {role}
-              {count === 1 ? '' : 's'}
-            </span>
-          ))}
-          {suspendedCount > 0 && (
-            <span className="badge badge-error">
-              {suspendedCount} suspended
-            </span>
-          )}
-        </div>
-      </div>
-
+    <PageContainer title="Admin" subtitle="Platform activity at a glance.">
       <AdminNav />
-
-      <div className="stat-grid">
-        <Link to="/admin/users" className="stat-card link-reset">
-          <div className="stat-value">{users.length}</div>
-          <span className="stat-label">Users</span>
-        </Link>
-        <Link to="/admin/gigs/pending" className="stat-card link-reset">
-          <div className="stat-value">{pendingGigCount}</div>
-          <span className="stat-label">Pending gig approvals</span>
-        </Link>
-        <Link to="/admin/gigs/pending" className="stat-card link-reset">
-          <div className="stat-value">{inProgressGigCount}</div>
-          <span className="stat-label">Gigs in progress</span>
-        </Link>
-        <Link to="/admin/gigs/completed" className="stat-card link-reset">
-          <div className="stat-value">{completedGigCount}</div>
-          <span className="stat-label">Completed gigs</span>
-        </Link>
-      </div>
-    </div>
+      {loading ? (
+        <Skeleton active />
+      ) : (
+        <Row gutter={[16, 16]}>
+          {tiles.map((tile) => (
+            <Col xs={12} md={8} lg={6} key={tile.label}>
+              <Card
+                size="small"
+                hoverable
+                onClick={() => navigate(tile.to)}
+                style={{ height: '100%' }}
+              >
+                <Statistic title={tile.label} value={tile.value} />
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      )}
+    </PageContainer>
   );
 };
 

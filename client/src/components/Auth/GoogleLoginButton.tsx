@@ -1,10 +1,9 @@
-import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
+import { useNavigate } from 'react-router-dom';
+import { Alert, Form, Modal, Select, Typography } from 'antd';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { googleLogin } from '../../store/slices/authSlice';
-import Modal from '../common/Modal';
-import Select from '../common/Select';
 import { ROLE_OPTIONS } from '../../constants/roles';
 import type { Role } from '../../types';
 
@@ -30,38 +29,36 @@ const GoogleLoginButton = () => {
   };
 
   const handleSuccess = (credentialResponse: CredentialResponse) => {
-    if (!credentialResponse.credential) return;
-    finishLogin(credentialResponse.credential);
-  };
-
-  const handleCompleteSignup = (e: FormEvent) => {
-    e.preventDefault();
-    if (!pendingCredential) return;
-    finishLogin(pendingCredential, role);
+    if (credentialResponse.credential) finishLogin(credentialResponse.credential);
   };
 
   return (
     <>
-      <div className="google-login-button">
-        <GoogleLogin onSuccess={handleSuccess} onError={() => undefined} width="290" />
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <GoogleLogin onSuccess={handleSuccess} onError={() => undefined} width="320" />
       </div>
-      {error && !pendingCredential && <p className="form-error">{error}</p>}
-
-      {pendingCredential && (
-        <Modal title="Finish setting up your account" onClose={() => setPendingCredential(null)}>
-          <p className="muted">Welcome, {pendingName}! Tell us how you'll be using Isoko Talents.</p>
-          <form onSubmit={handleCompleteSignup}>
-            <label>
-              I am a...
-              <Select value={role} onChange={(v) => setRole(v as Role)} options={ROLE_OPTIONS} />
-            </label>
-            {error && <p className="form-error">{error}</p>}
-            <button type="submit" className="btn-primary" disabled={status === 'loading'}>
-              {status === 'loading' ? 'Finishing...' : 'Continue'}
-            </button>
-          </form>
-        </Modal>
+      {error && !pendingCredential && (
+        <Alert type="error" showIcon message={error} style={{ marginTop: 12 }} />
       )}
+
+      <Modal
+        open={!!pendingCredential}
+        title="Finish setting up your account"
+        okText="Continue"
+        confirmLoading={status === 'loading'}
+        onOk={() => pendingCredential && finishLogin(pendingCredential, role)}
+        onCancel={() => setPendingCredential(null)}
+      >
+        <Typography.Paragraph type="secondary">
+          Welcome, {pendingName}! Tell us how you'll be using Isoko Talents.
+        </Typography.Paragraph>
+        <Form layout="vertical">
+          <Form.Item label="I am a...">
+            <Select value={role} onChange={(v) => setRole(v as Role)} options={ROLE_OPTIONS} />
+          </Form.Item>
+        </Form>
+        {error && <Alert type="error" showIcon message={error} />}
+      </Modal>
     </>
   );
 };

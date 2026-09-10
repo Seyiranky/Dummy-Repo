@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button, Space, Typography } from 'antd';
+import { DownloadOutlined } from '@ant-design/icons';
 import { userApi } from '../../api/userApi';
 
 const ExportDataButton = () => {
@@ -25,12 +27,12 @@ const ExportDataButton = () => {
   };
 
   return (
-    <div className="settings-divider">
-      <p>{t('settings.exportDesc')}</p>
-      <button type="button" onClick={handleExport} disabled={exporting}>
-        {exporting ? t('settings.exporting') : t('settings.exportButton')}
-      </button>
-    </div>
+    <Space direction="vertical" size={12} style={{ width: '100%' }}>
+      <Typography.Text type="secondary">{t('settings.exportDesc')}</Typography.Text>
+      <Button icon={<DownloadOutlined />} onClick={handleExport} loading={exporting}>
+        {t('settings.exportButton')}
+      </Button>
+    </Space>
   );
 };
 

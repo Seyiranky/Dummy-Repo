@@ -1,3 +1,5 @@
+import { Segmented } from 'antd';
+
 export interface ToggleOption<T extends string> {
   value: T;
   label: string;
@@ -9,23 +11,13 @@ interface ToggleProps<T extends string> {
   options: ToggleOption<T>[];
 }
 
-const Toggle = <T extends string>({ value, onChange, options }: ToggleProps<T>) => {
-  return (
-    <div className="toggle" role="tablist">
-      {options.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          role="tab"
-          aria-selected={option.value === value}
-          className={`toggle-option${option.value === value ? ' active' : ''}`}
-          onClick={() => onChange(option.value)}
-        >
-          {option.label}
-        </button>
-      ))}
-    </div>
-  );
-};
+// Thin antd-backed shim (was a hand-rolled tab strip).
+const Toggle = <T extends string>({ value, onChange, options }: ToggleProps<T>) => (
+  <Segmented
+    value={value}
+    onChange={(v) => onChange(v as T)}
+    options={options.map((o) => ({ label: o.label, value: o.value }))}
+  />
+);
 
 export default Toggle;

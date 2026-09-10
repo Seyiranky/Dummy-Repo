@@ -1,19 +1,33 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import {
+  Alert,
+  Button,
+  Card,
+  Col,
+  Empty,
+  List,
+  Modal,
+  Progress,
+  Row,
+  Space,
+  Statistic,
+  Steps,
+  Tag,
+} from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchMatches } from '../../store/slices/matchSlice';
 import { skillTaskApi } from '../../api/skillTaskApi';
 import { transactionApi } from '../../api/transactionApi';
 import { userApi } from '../../api/userApi';
 import { adminApi } from '../../api/adminApi';
-import { statusBadgeClass } from '../../utils/statusBadge';
-import Avatar from '../common/Avatar';
+import { LineChart, PieChart } from '../common/charts';
+import PageContainer from '../Layout/PageContainer';
 import IdentityLink from '../common/IdentityLink';
 import SkillThumbnail from '../common/SkillThumbnail';
-import Modal from '../common/Modal';
-import TrustScoreRing from '../Profile/TrustScoreRing';
-import StatCard from './StatCard';
+import StatusTag from '../common/StatusTag';
 import SkillVerificationForm from '../Verification/SkillVerificationForm';
 import AdminReviewQueue from '../Verification/AdminReviewQueue';
 import GigApprovalQueue from '../Admin/GigApprovalQueue';
@@ -25,235 +39,322 @@ const Dashboard = () => {
   const { profile, role } = useAppSelector((state) => state.auth);
   const matches = useAppSelector((state) => state.matches.items);
   const [tasks, setTasks] = useState<SkillTask[]>([]);
-  const [tasksLoading, setTasksLoading] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [verifiedSkills, setVerifiedSkills] = useState<UserSkill[]>([]);
   const [gigs, setGigs] = useState<Gig[]>([]);
-  const [gigsLoading, setGigsLoading] = useState(false);
-  const [showSkillModal, setShowSkillModal] = useState(false);
-  const [showReviewModal, setShowReviewModal] = useState(false);
-  const [showGigModal, setShowGigModal] = useState(false);
+  const [modal, setModal] = useState<'skill' | 'review' | 'gig' | null>(null);
 
   useEffect(() => {
     dispatch(fetchMatches());
   }, [dispatch]);
 
   const refreshTasks = () => {
-    setTasksLoading(true);
-    skillTaskApi
-      .listTasks(role === 'admin' ? { assignedToMe: true } : undefined)
-      .then(setTasks)
-      .finally(() => setTasksLoading(false));
+    skillTaskApi.listTasks(role === 'admin' ? { assignedToMe: true } : undefined).then(setTasks);
+  };
+  const refreshGigs = () => {
+    adminApi.listGigs().then(setGigs);
   };
 
   useEffect(() => {
-    if (role === 'worker' || role === 'admin') {
-      refreshTasks();
-    }
+    if (role === 'worker' || role === 'admin') refreshTasks();
+    if (role === 'worker' || role === 'client') transactionApi.listTransactions().then(setTransactions);
+    if (role === 'admin') refreshGigs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role]);
 
   useEffect(() => {
-    if (role === 'worker' || role === 'client') {
-      transactionApi.listTransactions().then(setTransactions);
-    }
-  }, [role]);
-
-  useEffect(() => {
-    if (role === 'worker' && profile) {
-      userApi.getUserSkills(profile.id).then(setVerifiedSkills);
-    }
+    if (role === 'worker' && profile) userApi.getUserSkills(profile.id).then(setVerifiedSkills);
   }, [role, profile]);
 
-  const refreshGigs = () => {
-    setGigsLoading(true);
-    adminApi
-      .listGigs()
-      .then(setGigs)
-      .finally(() => setGigsLoading(false));
-  };
-
-  useEffect(() => {
-    if (role === 'admin') refreshGigs();
-  }, [role]);
-
-  if (!profile) {
-    return <p>Loading your profile...</p>;
-  }
-
-  const pendingReviews = tasks.filter((t) => t.status === 'pending');
-  const decidedReviews = tasks.filter((t) => t.status !== 'pending');
+  const pendingReviews = tasks.filter((x) => x.status === 'pending');
+  const decidedReviews = tasks.filter((x) => x.status !== 'pending');
   const pendingGigs = gigs.filter((g) => g.status === 'pending_review');
-  const needsLocation = role === 'worker' && (profile.locationLat == null || profile.locationLng == null);
-  const activeMatches = matches.filter((m) => m.status === 'pending' || m.status === 'accepted').length;
+  const activeMatches = matches.filter(
+    (m) => m.status === 'pending' || m.status === 'accepted',
+  ).length;
   const confirmedTotal = transactions
-    .filter((t) => t.status === 'confirmed')
-    .reduce((sum, t) => sum + Number(t.amount), 0);
+    .filter((x) => x.status === 'confirmed')
+    .reduce((sum, x) => sum + Number(x.amount), 0);
+  const needsLocation =
+    role === 'worker' && (profile?.locationLat == null || profile?.locationLng == null);
+
+  const earningsSeries = useMemo(() => {
+    const byDay = new Map<string, number>();
+    for (const tx of transactions.filter((x) => x.status === 'confirmed')) {
+      const day = new Date(tx.createdAt).toISOString().slice(0, 10);
+      byDay.set(day, (byDay.get(day) ?? 0) + Number(tx.amount));
+    }
+    return [...byDay.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([day, y]) => ({ x: day.slice(5), y }));
+  }, [transactions]);
+
+  const matchStatusSlices = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const m of matches) counts.set(m.status, (counts.get(m.status) ?? 0) + 1);
+    return [...counts.entries()].map(([type, value]) => ({ type, value }));
+  }, [matches]);
+
+  if (!profile) return null;
+
+  const isEarner = role === 'worker' || role === 'client';
+  const showCharts = isEarner && (earningsSeries.length >= 2 || matchStatusSlices.length > 0);
+
+  const kpi = (title: string, value: number | string, suffix?: string, accent?: string) => (
+    <Col xs={12} lg={8}>
+      <Card size="small" style={{ height: '100%' }}>
+        <Statistic title={title} value={value} suffix={suffix} valueStyle={accent ? { color: accent } : undefined} />
+      </Card>
+    </Col>
+  );
 
   return (
-    <div>
-      <div className="dashboard-header">
-        <Avatar name={profile.name} size={64} />
-        <div>
-          <h1 className="profile-name">{t('dashboard.welcome', { name: profile.name })}</h1>
-          <span className="badge">{profile.role}</span>
-        </div>
-      </div>
-
+    <PageContainer
+      title={t('dashboard.welcome', { name: profile.name })}
+      subtitle={<span style={{ textTransform: 'capitalize' }}>{profile.role}</span>}
+    >
       {needsLocation && (
-        <div className="section">
-          <p className="form-error">
-            {t('dashboard.locationPromptBefore')} <Link to="/settings">{t('sidebar.settings')}</Link>{' '}
-            {t('dashboard.locationPromptAfter')}
-          </p>
-        </div>
+        <Alert
+          type="warning"
+          showIcon
+          style={{ marginBottom: 20 }}
+          message={
+            <>
+              {t('dashboard.locationPromptBefore')} <Link to="/settings">{t('sidebar.settings')}</Link>{' '}
+              {t('dashboard.locationPromptAfter')}
+            </>
+          }
+        />
       )}
 
-      <div className="stat-grid">
-        {(role === 'worker' || role === 'client') && (
+      <Row gutter={[16, 16]}>
+        {isEarner ? (
           <>
-            <StatCard
-              label={t('dashboard.trustScore')}
-              value={<TrustScoreRing trustScore={profile.trustScore} size={72} />}
-            />
-            <StatCard
-              label={role === 'client' ? t('dashboard.totalPaid') : t('dashboard.totalEarned')}
-              value={`${confirmedTotal.toLocaleString()} RWF`}
-            />
-            <StatCard label={t('dashboard.activeMatches')} value={activeMatches} />
+            <Col xs={12} lg={8}>
+              <Card size="small" style={{ height: '100%' }}>
+                <Statistic title={t('dashboard.trustScore')} value={profile.trustScore.toFixed(1)} suffix="/ 5" />
+                <Progress
+                  percent={Math.round((profile.trustScore / 5) * 100)}
+                  showInfo={false}
+                  size="small"
+                  strokeColor="#18181b"
+                  style={{ marginTop: 8 }}
+                />
+              </Card>
+            </Col>
+            {kpi(role === 'client' ? t('dashboard.totalPaid') : t('dashboard.totalEarned'), confirmedTotal, 'RWF')}
+            {kpi(t('dashboard.activeMatches'), activeMatches)}
+          </>
+        ) : (
+          <>
+            {kpi(t('dashboard.pendingReviews'), pendingReviews.length)}
+            {kpi(t('dashboard.reviewsCompleted'), decidedReviews.length)}
+            {kpi(
+              t('dashboard.pendingGigApprovals'),
+              pendingGigs.length,
+              undefined,
+              pendingGigs.length ? '#b45309' : undefined,
+            )}
           </>
         )}
-        {role === 'admin' && (
+      </Row>
+
+      {showCharts && (
+        <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+          <Col xs={24} lg={14}>
+            <Card
+              title={role === 'client' ? t('dashboard.totalPaid') : t('dashboard.totalEarned')}
+              styles={{ body: { minHeight: 140 } }}
+            >
+              {earningsSeries.length >= 2 ? (
+                <LineChart data={earningsSeries} height={220} />
+              ) : (
+                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('dashboard.noMatchesYet')} />
+              )}
+            </Card>
+          </Col>
+          <Col xs={24} lg={10}>
+            <Card title={t('dashboard.yourMatches')} styles={{ body: { minHeight: 140 } }}>
+              {matchStatusSlices.length > 0 ? (
+                <PieChart data={matchStatusSlices} height={220} />
+              ) : (
+                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('dashboard.noMatchesYet')} />
+              )}
+            </Card>
+          </Col>
+        </Row>
+      )}
+
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        {role === 'admin' ? (
           <>
-            <StatCard label={t('dashboard.pendingReviews')} value={pendingReviews.length} />
-            <StatCard label={t('dashboard.reviewsCompleted')} value={decidedReviews.length} />
-            <StatCard label={t('dashboard.pendingGigApprovals')} value={pendingGigs.length} />
+            <Col xs={24} lg={12}>
+              <Card
+                title={t('dashboard.skillReviews')}
+                extra={
+                  <Button type="link" onClick={() => setModal('review')}>
+                    {t('dashboard.reviewSubmissions')}
+                  </Button>
+                }
+                style={{ height: '100%' }}
+              >
+                {pendingReviews.length === 0 ? (
+                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('dashboard.nothingToReview')} />
+                ) : (
+                  <List
+                    size="small"
+                    dataSource={pendingReviews.slice(0, 5)}
+                    renderItem={(task) => (
+                      <List.Item>
+                        <List.Item.Meta
+                          avatar={<SkillThumbnail category={task.skill?.category} size={28} />}
+                          title={task.skill?.name}
+                          description={
+                            task.worker ? (
+                              <IdentityLink id={task.worker.id} name={task.worker.name} size={18} />
+                            ) : null
+                          }
+                        />
+                      </List.Item>
+                    )}
+                  />
+                )}
+              </Card>
+            </Col>
+            <Col xs={24} lg={12}>
+              <Card
+                title={t('dashboard.gigApprovals')}
+                extra={
+                  <Button type="link" onClick={() => setModal('gig')}>
+                    {t('dashboard.reviewSubmissions')}
+                  </Button>
+                }
+                style={{ height: '100%' }}
+              >
+                {pendingGigs.length === 0 ? (
+                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('dashboard.nothingToReview')} />
+                ) : (
+                  <List
+                    size="small"
+                    dataSource={pendingGigs.slice(0, 5)}
+                    renderItem={(gig) => (
+                      <List.Item>
+                        <List.Item.Meta
+                          title={gig.title}
+                          description={
+                            gig.client ? (
+                              <IdentityLink id={gig.client.id} name={gig.client.name} size={18} />
+                            ) : null
+                          }
+                        />
+                      </List.Item>
+                    )}
+                  />
+                )}
+              </Card>
+            </Col>
+          </>
+        ) : (
+          <>
+            <Col xs={24} lg={role === 'worker' ? 15 : 24}>
+              <Card
+                title={t('dashboard.yourMatches')}
+                style={{ height: '100%' }}
+                styles={{ body: { paddingBlock: matches.length ? 0 : 24 } }}
+              >
+                {matches.length === 0 ? (
+                  <Empty
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                    description={
+                      <>
+                        {t('dashboard.noMatchesYet')}{' '}
+                        <Link to="/marketplace">{t('dashboard.goToMarketplace')}</Link>
+                      </>
+                    }
+                  />
+                ) : (
+                  <List
+                    dataSource={matches.slice(0, 6)}
+                    renderItem={(match) => {
+                      const counterparty = role === 'client' ? match.worker : match.gig?.client;
+                      return (
+                        <List.Item actions={[<StatusTag key="s" status={match.status} />]}>
+                          <List.Item.Meta
+                            title={<Link to={`/gigs/${match.gigId}`}>{match.gig?.title ?? 'Gig'}</Link>}
+                            description={
+                              counterparty ? (
+                                <IdentityLink id={counterparty.id} name={counterparty.name} size={20} />
+                              ) : null
+                            }
+                          />
+                        </List.Item>
+                      );
+                    }}
+                  />
+                )}
+              </Card>
+            </Col>
+
+            {role === 'worker' && (
+              <Col xs={24} lg={9}>
+                <Card
+                  title={t('dashboard.skills')}
+                  extra={
+                    <Button type="link" icon={<PlusOutlined />} onClick={() => setModal('skill')}>
+                      {t('dashboard.addNewSkill')}
+                    </Button>
+                  }
+                  style={{ height: '100%' }}
+                >
+                  {verifiedSkills.length === 0 ? (
+                    <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('dashboard.noVerifiedSkills')} />
+                  ) : (
+                    <Space size={[8, 8]} wrap>
+                      {verifiedSkills.map((us) => (
+                        <Tag key={us.id} style={{ padding: '4px 10px', borderRadius: 6 }}>
+                          <Space size={6}>
+                            <SkillThumbnail category={us.skill?.category} size={18} />
+                            {us.skill?.name}
+                          </Space>
+                        </Tag>
+                      ))}
+                    </Space>
+                  )}
+                </Card>
+              </Col>
+            )}
           </>
         )}
-      </div>
+      </Row>
 
-      {role === 'client' && (
-        <div className="section">
-          <h2>{t('dashboard.getStarted')}</h2>
-          <p>
-            {t('dashboard.clientGetStarted')}{' '}
-            <Link to="/marketplace">{t('dashboard.goToMarketplace')}</Link>
-          </p>
-        </div>
+      {isEarner && matches.length === 0 && (
+        <Card title={t('dashboard.getStarted')} style={{ marginTop: 16 }}>
+          <Steps
+            direction="vertical"
+            size="small"
+            current={role === 'worker' ? (verifiedSkills.length ? 1 : 0) : 0}
+            items={
+              role === 'worker'
+                ? [
+                    { title: t('dashboard.submitSkillTask'), description: t('dashboard.workerGetStartedAfter') },
+                    { title: t('dashboard.openGigsLink'), description: t('dashboard.goToMarketplace') },
+                  ]
+                : [{ title: t('dashboard.clientGetStarted'), description: t('dashboard.goToMarketplace') }]
+            }
+          />
+        </Card>
       )}
 
-      {role === 'worker' && (
-        <div className="section">
-          <h2>{t('dashboard.getStarted')}</h2>
-          <p>
-            <button type="button" className="btn-text" onClick={() => setShowSkillModal(true)}>
-              {t('dashboard.submitSkillTask')}
-            </button>{' '}
-            {t('dashboard.workerGetStartedAfter')}{' '}
-            <Link to="/marketplace">{t('dashboard.openGigsLink')}</Link>.
-          </p>
-        </div>
-      )}
-
-      {role === 'admin' && !tasksLoading && pendingReviews.length > 0 && (
-        <div className="section">
-          <p>
-            {t('dashboard.pendingTasksNotice', { count: pendingReviews.length })}{' '}
-            <button type="button" className="btn-text" onClick={() => setShowReviewModal(true)}>
-              {t('dashboard.reviewNow')}
-            </button>
-          </p>
-        </div>
-      )}
-
-      <div className="section">
-        <h2>{t('dashboard.yourMatches')}</h2>
-        {matches.length === 0 && <p className="muted">{t('dashboard.noMatchesYet')}</p>}
-        {matches.map((match) => {
-          const counterparty = role === 'client' ? match.worker : match.gig?.client;
-          return (
-            <div key={match.id} className="card card-row">
-              <div>
-                <span className="card-title">{match.gig?.title ?? 'Gig'}</span>
-                {counterparty && <IdentityLink id={counterparty.id} name={counterparty.name} size={24} />}
-              </div>
-              <span className={statusBadgeClass(match.status)}>{match.status}</span>
-            </div>
-          );
-        })}
-      </div>
-
-      {role === 'worker' && (
-        <div className="section">
-          <h2>{t('dashboard.skills')}</h2>
-          {verifiedSkills.length === 0 ? (
-            <p className="muted">{t('dashboard.noVerifiedSkills')}</p>
-          ) : (
-            <div className="skill-tag-list">
-              {verifiedSkills.map((us) => (
-                <span key={us.id} className="skill-tag">
-                  <SkillThumbnail category={us.skill?.category} size={20} />
-                  {us.skill?.name}
-                </span>
-              ))}
-            </div>
-          )}
-          <button type="button" className="btn-text" onClick={() => setShowSkillModal(true)}>
-            {t('dashboard.addNewSkill')}
-          </button>
-        </div>
-      )}
-
-      {role === 'admin' && (
-        <div className="section">
-          <h2>{t('dashboard.skillReviews')}</h2>
-          {tasksLoading && <p className="muted">{t('marketplace.gigFeed.loading')}</p>}
-          {!tasksLoading &&
-            (pendingReviews.length === 0 ? (
-              <p className="muted">{t('dashboard.nothingToReview')}</p>
-            ) : (
-              <p className="muted">{t('dashboard.tasksAwaitingReview', { count: pendingReviews.length })}</p>
-            ))}
-          <button type="button" className="btn-text" onClick={() => setShowReviewModal(true)}>
-            {t('dashboard.reviewSubmissions')}
-          </button>
-        </div>
-      )}
-
-      {role === 'admin' && (
-        <div className="section">
-          <h2>{t('dashboard.gigApprovals')}</h2>
-          {gigsLoading && <p className="muted">{t('marketplace.gigFeed.loading')}</p>}
-          {!gigsLoading &&
-            (pendingGigs.length === 0 ? (
-              <p className="muted">{t('dashboard.nothingToReview')}</p>
-            ) : (
-              <p className="muted">{t('dashboard.gigsAwaitingReview', { count: pendingGigs.length })}</p>
-            ))}
-          <button type="button" className="btn-text" onClick={() => setShowGigModal(true)}>
-            {t('dashboard.reviewSubmissions')}
-          </button>
-        </div>
-      )}
-
-      {showSkillModal && (
-        <Modal title={t('dashboard.addSkillModalTitle')} onClose={() => setShowSkillModal(false)}>
-          <SkillVerificationForm tasks={tasks} onSubmitted={refreshTasks} />
-        </Modal>
-      )}
-
-      {showReviewModal && (
-        <Modal title={t('dashboard.skillReviewModalTitle')} onClose={() => setShowReviewModal(false)}>
-          <AdminReviewQueue tasks={tasks} onReviewed={refreshTasks} />
-        </Modal>
-      )}
-
-      {showGigModal && (
-        <Modal title={t('dashboard.gigApprovalModalTitle')} onClose={() => setShowGigModal(false)}>
-          <GigApprovalQueue gigs={gigs} onReviewed={refreshGigs} />
-        </Modal>
-      )}
-    </div>
+      <Modal open={modal === 'skill'} title={t('dashboard.addSkillModalTitle')} footer={null} onCancel={() => setModal(null)} destroyOnHidden>
+        <SkillVerificationForm tasks={tasks} onSubmitted={refreshTasks} />
+      </Modal>
+      <Modal open={modal === 'review'} title={t('dashboard.skillReviewModalTitle')} footer={null} width={640} onCancel={() => setModal(null)} destroyOnHidden>
+        <AdminReviewQueue tasks={tasks} onReviewed={refreshTasks} />
+      </Modal>
+      <Modal open={modal === 'gig'} title={t('dashboard.gigApprovalModalTitle')} footer={null} width={640} onCancel={() => setModal(null)} destroyOnHidden>
+        <GigApprovalQueue gigs={gigs} onReviewed={refreshGigs} />
+      </Modal>
+    </PageContainer>
   );
 };
 

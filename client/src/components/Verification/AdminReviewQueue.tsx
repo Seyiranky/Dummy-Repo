@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { Button, Empty, List, Space, Typography } from 'antd';
 import { skillTaskApi } from '../../api/skillTaskApi';
 import IdentityLink from '../common/IdentityLink';
 import SkillThumbnail from '../common/SkillThumbnail';
-import { statusBadgeClass } from '../../utils/statusBadge';
+import StatusTag from '../common/StatusTag';
 import type { SkillTask } from '../../types';
 
 interface AdminReviewQueueProps {
@@ -23,67 +24,91 @@ const AdminReviewQueue = ({ tasks, onReviewed }: AdminReviewQueueProps) => {
     }
   };
 
-  const pending = tasks.filter((t) => t.status === 'pending');
-  const decided = tasks.filter((t) => t.status !== 'pending');
+  const pending = tasks.filter((x) => x.status === 'pending');
+  const decided = tasks.filter((x) => x.status !== 'pending');
 
   return (
-    <div>
-      <h2>Tasks awaiting your review</h2>
-      {pending.length === 0 && <p className="muted">Nothing to review right now.</p>}
-      {pending.map((task) => (
-        <div key={task.id} className="card">
-          <div className="card-row">
-            <div className="skill-line">
-              <SkillThumbnail category={task.skill?.category} />
-              <div>
-                <span className="card-title">{task.skill?.name}</span>
-                {task.worker && <IdentityLink id={task.worker.id} name={task.worker.name} size={24} />}
-              </div>
-            </div>
-          </div>
-          <p>
-            Evidence:{' '}
-            <a href={task.evidenceUrl} target="_blank" rel="noreferrer">
-              {task.evidenceUrl}
-            </a>
-          </p>
-          {task.notes && <p className="muted">{task.notes}</p>}
-          <div className="card-row">
-            <button
-              type="button"
-              className="btn-success"
-              onClick={() => decide(task.id, 'approved')}
-              disabled={busyId === task.id}
-            >
-              Approve
-            </button>
-            <button
-              type="button"
-              className="btn-danger"
-              onClick={() => decide(task.id, 'rejected')}
-              disabled={busyId === task.id}
-            >
-              Reject
-            </button>
-          </div>
-        </div>
-      ))}
+    <Space direction="vertical" size={20} style={{ width: '100%' }}>
+      <div>
+        <Typography.Title level={5}>Tasks awaiting your review</Typography.Title>
+        {pending.length === 0 ? (
+          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Nothing to review right now." />
+        ) : (
+          <List
+            itemLayout="vertical"
+            dataSource={pending}
+            renderItem={(task) => (
+              <List.Item
+                key={task.id}
+                actions={[
+                  <Button
+                    key="a"
+                    type="primary"
+                    size="small"
+                    loading={busyId === task.id}
+                    onClick={() => decide(task.id, 'approved')}
+                  >
+                    Approve
+                  </Button>,
+                  <Button
+                    key="r"
+                    danger
+                    size="small"
+                    loading={busyId === task.id}
+                    onClick={() => decide(task.id, 'rejected')}
+                  >
+                    Reject
+                  </Button>,
+                ]}
+              >
+                <List.Item.Meta
+                  avatar={<SkillThumbnail category={task.skill?.category} size={40} />}
+                  title={task.skill?.name}
+                  description={
+                    task.worker ? (
+                      <IdentityLink id={task.worker.id} name={task.worker.name} size={20} />
+                    ) : null
+                  }
+                />
+                <Typography.Paragraph style={{ marginBottom: task.notes ? 4 : 0 }}>
+                  Evidence:{' '}
+                  <a href={task.evidenceUrl} target="_blank" rel="noreferrer">
+                    {task.evidenceUrl}
+                  </a>
+                </Typography.Paragraph>
+                {task.notes && (
+                  <Typography.Text type="secondary">{task.notes}</Typography.Text>
+                )}
+              </List.Item>
+            )}
+          />
+        )}
+      </div>
 
-      <h2>Past reviews</h2>
-      {decided.length === 0 && <p className="muted">No reviews completed yet.</p>}
-      {decided.map((task) => (
-        <div key={task.id} className="card card-row">
-          <div className="skill-line">
-            <SkillThumbnail category={task.skill?.category} />
-            <div>
-              <span className="card-title">{task.skill?.name}</span>
-              {task.worker && <IdentityLink id={task.worker.id} name={task.worker.name} size={24} />}
-            </div>
-          </div>
-          <span className={statusBadgeClass(task.status)}>{task.status}</span>
-        </div>
-      ))}
-    </div>
+      <div>
+        <Typography.Title level={5}>Past reviews</Typography.Title>
+        {decided.length === 0 ? (
+          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No reviews completed yet." />
+        ) : (
+          <List
+            dataSource={decided}
+            renderItem={(task) => (
+              <List.Item actions={[<StatusTag key="s" status={task.status} />]}>
+                <List.Item.Meta
+                  avatar={<SkillThumbnail category={task.skill?.category} size={32} />}
+                  title={task.skill?.name}
+                  description={
+                    task.worker ? (
+                      <IdentityLink id={task.worker.id} name={task.worker.name} size={20} />
+                    ) : null
+                  }
+                />
+              </List.Item>
+            )}
+          />
+        )}
+      </div>
+    </Space>
   );
 };
 

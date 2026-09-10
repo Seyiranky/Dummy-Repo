@@ -1,212 +1,36 @@
 :root {
-  --font-body: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
   --font-heading: 'Plus Jakarta Sans', var(--font-body);
 
   font-family: var(--font-body);
   line-height: 1.5;
   font-weight: 400;
   color-scheme: light dark;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  /* Isoko Talents "Baltic Coast" palette. Cream is the primary canvas color
-     used throughout the app; baltic-blue/teal/verdigris/mint-leaf form the
-     accent family. Red is kept only as a usability-necessary exception for
-     errors/danger — it isn't part of the brand palette. */
-  --color-cream: #f0f3bd;
-  --color-baltic-blue: #05668d;
-  --color-teal: #028090;
-  --color-verdigris: #00a896;
-  --color-mint-leaf: #02c39a;
-
-  /* Cream is the background everywhere — page canvas and every surface
-     (nav, cards, modals, inputs) share the exact same cream. Depth comes
-     from borders/shadows, not a second shade. */
-  --color-bg-page: var(--color-cream);
-  --color-bg-surface: var(--color-cream);
-  --color-text: var(--color-baltic-blue);
-  --color-text-muted: #4f7a8b;
-  --color-border: #d8e0a8;
-
-  /* Ink: the primary UI action color (baltic-blue in light mode, flips to cream in dark). */
-  --color-ink: var(--color-baltic-blue);
-  --color-ink-contrast: var(--color-cream);
-
-  /* The accent family: mint-leaf for emphasis, verdigris for its hover step. */
-  --color-primary: var(--color-mint-leaf);
-  --color-primary-hover: var(--color-verdigris);
-  --color-primary-contrast: #ffffff;
-  --color-accent: var(--color-mint-leaf);
-
-  --color-success: var(--color-mint-leaf);
-  --color-success-bg: #e1f7ef;
-  --color-success-text: #017a5e;
-
-  --color-error: #d6483f;
-  --color-error-bg: #fbe9e7;
-  --color-error-text: #a53229;
-
-  /* "Pending" — muted teal, not a foreign hue. */
-  --color-warning: #7fa3ac;
-  --color-warning-bg: #eaf1e4;
-  --color-warning-text: #4d6b73;
-
-  /* "Active / in-progress" — baltic-blue outline. */
-  --color-info: var(--color-baltic-blue);
-  --color-info-bg: #e2eef2;
-  --color-info-text: var(--color-baltic-blue);
-
-  color: var(--color-text);
-  background-color: var(--color-bg-page);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg-page: #052f3d;
-    --color-bg-surface: #0a4258;
-    --color-text: var(--color-cream);
-    --color-text-muted: #a6c6cd;
-    --color-border: #14586f;
-
-    --color-ink: var(--color-cream);
-    --color-ink-contrast: var(--color-baltic-blue);
-
-    --color-primary: var(--color-mint-leaf);
-    --color-primary-hover: #5eebc9;
-    --color-primary-contrast: #052f3d;
-    --color-accent: var(--color-mint-leaf);
-
-    --color-success: var(--color-mint-leaf);
-    --color-success-bg: rgba(2, 195, 154, 0.18);
-    --color-success-text: #5eebc9;
-
-    --color-error: #f2867e;
-    --color-error-bg: rgba(242, 134, 126, 0.18);
-    --color-error-text: #fbc4bf;
-
-    --color-warning: #6e93a0;
-    --color-warning-bg: rgba(110, 147, 160, 0.2);
-    --color-warning-text: #c4d8de;
-
-    --color-info: var(--color-cream);
-    --color-info-bg: rgba(240, 243, 189, 0.12);
-    --color-info-text: var(--color-cream);
-  }
+* {
+  box-sizing: border-box;
 }
 
-a {
-  font-weight: 500;
-  color: var(--color-primary);
-  text-decoration: inherit;
-}
-a:hover {
-  color: var(--color-primary-hover);
+html,
+body,
+#root {
+  height: 100%;
 }
 
 body {
   margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  background-color: var(--color-bg-page);
-  color: var(--color-text);
-}
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-family: var(--font-heading);
-  font-weight: 700;
-  line-height: 1.2;
-}
-
-h1 {
-  font-size: 2rem;
-}
-
-h2 {
-  font-size: 1.25rem;
-  font-weight: 600;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: var(--color-bg-surface);
-  color: var(--color-text);
-  cursor: pointer;
-  white-space: nowrap;
-  transition:
-    border-color 0.2s,
-    background-color 0.2s,
-    color 0.2s;
-}
-button:hover {
-  border-color: var(--color-ink);
-  color: var(--color-ink);
-}
-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-button:focus,
-button:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 1px;
-}
-
-.btn-primary {
-  background-color: var(--color-ink);
-  border-color: var(--color-ink);
-  color: var(--color-ink-contrast);
-}
-.btn-primary:hover {
-  background-color: var(--color-ink);
-  border-color: var(--color-ink);
-  color: var(--color-ink-contrast);
-  opacity: 0.85;
-}
-
-.btn-success {
-  background-color: var(--color-success);
-  border-color: var(--color-success);
-  color: #ffffff;
-}
-.btn-success:hover {
-  border-color: var(--color-success);
-  color: #ffffff;
-  opacity: 0.9;
-}
-
-.btn-danger {
   background: transparent;
-  border-color: var(--color-error);
-  color: var(--color-error);
-}
-.btn-danger:hover {
-  background-color: var(--color-error-bg);
-  border-color: var(--color-error);
-  color: var(--color-error);
 }
 
-.btn-text {
-  background: transparent;
-  border: none;
+#root {
+  max-width: none;
+  margin: 0;
   padding: 0;
-  font-weight: 600;
-  color: var(--color-primary);
-}
-.btn-text:hover {
-  border-color: transparent;
-  color: var(--color-primary-hover);
-  text-decoration: underline;
+  text-align: left;
 }

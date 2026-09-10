@@ -1,10 +1,27 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import {
+  Button,
+  Card,
+  Col,
+  Empty,
+  Flex,
+  List,
+  Progress,
+  Rate,
+  Result,
+  Row,
+  Skeleton,
+  Space,
+  Tag,
+  Typography,
+} from 'antd';
+import { MessageOutlined } from '@ant-design/icons';
 import { userApi } from '../../api/userApi';
 import { reviewApi } from '../../api/reviewApi';
 import { useAppSelector } from '../../store/hooks';
 import { canMessage } from '../../utils/messaging';
-import TrustScoreRing from './TrustScoreRing';
+import PageContainer from '../Layout/PageContainer';
 import Avatar from '../common/Avatar';
 import IdentityLink from '../common/IdentityLink';
 import SkillThumbnail from '../common/SkillThumbnail';
@@ -34,82 +51,148 @@ const WorkerProfile = () => {
       .finally(() => setLoading(false));
   }, [id]);
 
-  if (loading) {
-    return <p className="muted">Loading profile...</p>;
-  }
-
-  if (notFound || !profile) {
-    return <p className="form-error">This profile could not be found.</p>;
-  }
+  if (loading) return <Skeleton active avatar paragraph={{ rows: 6 }} />;
+  if (notFound || !profile)
+    return <Result status="404" title="This profile could not be found." />;
 
   const showMessageButton =
     viewerProfile && viewerProfile.id !== profile.id && canMessage(viewerRole, profile.role);
 
-  const handleMessage = () => {
-    navigate('/notifications', { state: { contact: { id: profile.id, name: profile.name } } });
-  };
+  const avgRating =
+    reviews.length > 0 ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0;
 
   return (
-    <div>
-      <div className="section profile-header">
-        <Avatar name={profile.name} size={64} />
-        <div>
-          <h1 className="profile-name">{profile.name}</h1>
-          <span className="badge">{profile.role}</span>
-        </div>
-        <div className="dashboard-trust">
-          <TrustScoreRing trustScore={profile.trustScore} />
-        </div>
-      </div>
-
-      {showMessageButton && (
-        <div className="section">
-          <button type="button" className="btn-primary" onClick={handleMessage}>
+    <PageContainer
+      title={profile.name}
+      extra={
+        showMessageButton && (
+          <Button
+            type="primary"
+            icon={<MessageOutlined />}
+            onClick={() =>
+              navigate('/notifications', {
+                state: { contact: { id: profile.id, name: profile.name } },
+              })
+            }
+          >
             Message {profile.name.split(' ')[0]}
-          </button>
-        </div>
-      )}
+          </Button>
+        )
+      }
+    >
+      <Row gutter={[16, 16]}>
+        <Col xs={24} md={8}>
+          <Card>
+            <Flex vertical align="center" gap={12}>
+              <Avatar name={profile.name} size={72} />
+              <Typography.Title level={4} style={{ margin: 0 }}>
+                {profile.name}
+              </Typography.Title>
+              <Tag style={{ textTransform: 'capitalize' }}>{profile.role}</Tag>
+              <Progress
+                type="dashboard"
+                size={120}
+                percent={Math.round((profile.trustScore / 5) * 100)}
+                format={() => (
+                  <span>
+                    <span style={{ fontSize: 22, fontWeight: 700 }}>
+                      {profile.trustScore.toFixed(1)}
+                    </span>
+                    <span style={{ fontSize: 12, color: '#71717a' }}> / 5</span>
+                  </span>
+                )}
+                strokeColor="#18181b"
+              />
+              <Typography.Text type="secondary">Trust score</Typography.Text>
+            </Flex>
+          </Card>
+        </Col>
 
-      {profile.bio && (
-        <div className="section">
-          <h2>About</h2>
-          <p>{profile.bio}</p>
-        </div>
-      )}
+        <Col xs={24} md={16}>
+          <Space direction="vertical" size={16} style={{ width: '100%' }}>
+            {profile.bio && (
+              <Card title="About">
+                <Typography.Paragraph style={{ margin: 0 }}>{profile.bio}</Typography.Paragraph>
+              </Card>
+            )}
 
-      {profile.role === 'worker' && (
-        <div className="section">
-          <h2>Verified skills</h2>
-          {skills.length === 0 ? (
-            <p className="muted">No verified skills yet.</p>
-          ) : (
-            <div className="skill-tag-list">
-              {skills.map((us) => (
-                <span key={us.id} className="skill-tag">
-                  <SkillThumbnail category={us.skill?.category} size={20} />
-                  {us.skill?.name}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+            {profile.role === 'worker' && (
+              <Card title="Verified skills">
+                {skills.length === 0 ? (
+                  <Empty
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                    description="No verified skills yet."
+                  />
+                ) : (
+                  <Space size={[8, 8]} wrap>
+                    {skills.map((us) => (
+                      <Tag key={us.id} style={{ padding: '4px 10px', borderRadius: 6 }}>
+                        <Space size={6}>
+                          <SkillThumbnail category={us.skill?.category} size={18} />
+                          {us.skill?.name}
+                        </Space>
+                      </Tag>
+                    ))}
+                  </Space>
+                )}
+              </Card>
+            )}
 
-      <div className="section">
-        <h2>Reviews ({reviews.length})</h2>
-        {reviews.length === 0 && <p className="muted">No reviews yet.</p>}
-        {reviews.map((review) => (
-          <div key={review.id} className="review-item">
-            <div className="card-row">
-              <span className="review-stars">{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</span>
-              <span className="muted">{new Date(review.createdAt).toLocaleDateString()}</span>
-            </div>
-            {review.comment && <p>{review.comment}</p>}
-            {review.author && <IdentityLink id={review.author.id} name={review.author.name} size={24} />}
-          </div>
-        ))}
-      </div>
-    </div>
+            <Card
+              title={
+                <Flex align="center" gap={8}>
+                  <span>Reviews ({reviews.length})</span>
+                  {reviews.length > 0 && <Rate disabled allowHalf value={avgRating} />}
+                </Flex>
+              }
+            >
+              {reviews.length === 0 ? (
+                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No reviews yet." />
+              ) : (
+                <List
+                  dataSource={reviews}
+                  renderItem={(review) => (
+                    <List.Item>
+                      <List.Item.Meta
+                        avatar={
+                          review.author ? (
+                            <Avatar name={review.author.name} size={32} />
+                          ) : undefined
+                        }
+                        title={
+                          <Flex justify="space-between">
+                            <Rate disabled value={review.rating} style={{ fontSize: 14 }} />
+                            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                              {new Date(review.createdAt).toLocaleDateString()}
+                            </Typography.Text>
+                          </Flex>
+                        }
+                        description={
+                          <>
+                            {review.comment && (
+                              <Typography.Paragraph style={{ marginBottom: 4 }}>
+                                {review.comment}
+                              </Typography.Paragraph>
+                            )}
+                            {review.author && (
+                              <IdentityLink
+                                id={review.author.id}
+                                name={review.author.name}
+                                size={20}
+                              />
+                            )}
+                          </>
+                        }
+                      />
+                    </List.Item>
+                  )}
+                />
+              )}
+            </Card>
+          </Space>
+        </Col>
+      </Row>
+    </PageContainer>
   );
 };
 

@@ -1,65 +1,75 @@
-import { useState, type FormEvent } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Alert, Button, Form, Input, Select, Typography } from 'antd';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { register } from '../../store/slices/authSlice';
-import Select from '../common/Select';
 import { ROLE_OPTIONS } from '../../constants/roles';
 import type { Role } from '../../types';
 
+interface RegisterValues {
+  name: string;
+  email: string;
+  password: string;
+  role: Role;
+}
+
 const RegisterForm = () => {
   const { t } = useTranslation();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [role, setRole] = useState<Role>('worker');
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { status, error } = useAppSelector((state) => state.auth);
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    const result = await dispatch(register({ name, email, password, role }));
-    if (register.fulfilled.match(result)) {
-      navigate('/dashboard');
-    }
+  const onFinish = async (values: RegisterValues) => {
+    const result = await dispatch(register(values));
+    if (register.fulfilled.match(result)) navigate('/dashboard');
   };
 
   return (
-    <div className="auth-form">
-      <h1>{t('auth.register.title')}</h1>
-      <p className="auth-form-subtitle">{t('auth.register.subtitle')}</p>
-      <form onSubmit={handleSubmit}>
-        <label>
-          {t('auth.register.nameLabel')}
-          <input value={name} onChange={(e) => setName(e.target.value)} required />
-        </label>
-        <label>
-          {t('auth.register.emailLabel')}
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        </label>
-        <label>
-          {t('auth.register.passwordLabel')}
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            minLength={8}
-            required
-          />
-        </label>
-        <label>
-          {t('auth.register.roleLabel')}
-          <Select value={role} onChange={(v) => setRole(v as Role)} options={ROLE_OPTIONS} />
-        </label>
-        {error && <p className="form-error">{error}</p>}
-        <button type="submit" className="btn-primary" disabled={status === 'loading'}>
-          {status === 'loading' ? t('auth.register.submitting') : t('auth.register.submit')}
-        </button>
-      </form>
-      <p className="auth-form-footer">
+    <div>
+      <Typography.Title level={2} style={{ marginBottom: 4 }}>
+        {t('auth.register.title')}
+      </Typography.Title>
+      <Typography.Paragraph type="secondary" style={{ marginBottom: 24 }}>
+        {t('auth.register.subtitle')}
+      </Typography.Paragraph>
+
+      {error && <Alert type="error" showIcon message={error} style={{ marginBottom: 16 }} />}
+
+      <Form
+        layout="vertical"
+        onFinish={onFinish}
+        requiredMark={false}
+        size="large"
+        initialValues={{ role: 'worker' }}
+      >
+        <Form.Item name="name" label={t('auth.register.nameLabel')} rules={[{ required: true }]}>
+          <Input autoComplete="name" />
+        </Form.Item>
+        <Form.Item
+          name="email"
+          label={t('auth.register.emailLabel')}
+          rules={[{ required: true, type: 'email' }]}
+        >
+          <Input autoComplete="email" />
+        </Form.Item>
+        <Form.Item
+          name="password"
+          label={t('auth.register.passwordLabel')}
+          rules={[{ required: true, min: 8 }]}
+        >
+          <Input.Password autoComplete="new-password" />
+        </Form.Item>
+        <Form.Item name="role" label={t('auth.register.roleLabel')} rules={[{ required: true }]}>
+          <Select options={ROLE_OPTIONS} />
+        </Form.Item>
+        <Button type="primary" htmlType="submit" block loading={status === 'loading'}>
+          {t('auth.register.submit')}
+        </Button>
+      </Form>
+
+      <Typography.Paragraph style={{ textAlign: 'center', marginTop: 24, marginBottom: 0 }}>
         {t('auth.register.haveAccount')} <Link to="/login">{t('auth.register.loginLink')}</Link>
-      </p>
+      </Typography.Paragraph>
     </div>
   );
 };

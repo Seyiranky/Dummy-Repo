@@ -62,7 +62,9 @@
     "notifications": "Notifications",
     "admin": "Admin",
     "settings": "Settings",
-    "logout": "Log out"
+    "logout": "Log out",
+    "gigDetails": "Gig details",
+    "profile": "Profile"
   },
   "dashboard": {
     "welcome": "Welcome, {{name}}",
@@ -87,7 +89,7 @@
     "noMatchesYet": "No matches yet.",
     "skills": "Skills",
     "noVerifiedSkills": "No verified skills yet.",
-    "addNewSkill": "+ Add new skill",
+    "addNewSkill": "Add skill",
     "skillReviews": "Skill reviews",
     "nothingToReview": "Nothing to review right now.",
     "tasksAwaitingReview": "{{count}} task(s) awaiting your review.",

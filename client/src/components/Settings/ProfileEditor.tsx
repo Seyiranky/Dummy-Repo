@@ -1,65 +1,66 @@
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { App, Button, Form, Input, Select } from 'antd';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchCurrentUser } from '../../store/slices/authSlice';
 import { userApi } from '../../api/userApi';
-import Select from '../common/Select';
 import { KIGALI_LOCATIONS } from '../../constants/locations';
 import { locationName as lookupLocationName } from '../../utils/locationName';
 
 const findLocationName = (lat?: number | null, lng?: number | null) =>
   lookupLocationName(lat, lng) ?? KIGALI_LOCATIONS[0].name;
 
+interface ProfileValues {
+  bio?: string;
+  locationName: string;
+}
+
 const ProfileEditor = () => {
   const { t } = useTranslation();
+  const { message } = App.useApp();
   const dispatch = useAppDispatch();
   const { profile, role } = useAppSelector((state) => state.auth);
-  const [bio, setBio] = useState(profile?.bio ?? '');
-  const [locationName, setLocationName] = useState(
-    findLocationName(profile?.locationLat, profile?.locationLng),
-  );
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const onFinish = async (values: ProfileValues) => {
     setSaving(true);
-    setSaved(false);
     try {
-      const location = KIGALI_LOCATIONS.find((l) => l.name === locationName) ?? KIGALI_LOCATIONS[0];
+      const location =
+        KIGALI_LOCATIONS.find((l) => l.name === values.locationName) ?? KIGALI_LOCATIONS[0];
       await userApi.updateProfile({
-        bio: bio || undefined,
+        bio: values.bio || undefined,
         locationLat: location.lat,
         locationLng: location.lng,
       });
       await dispatch(fetchCurrentUser());
-      setSaved(true);
+      message.success(t('settings.saved'));
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <label>
-        {t('settings.bioLabel')}
-        <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={2} />
-      </label>
+    <Form
+      layout="vertical"
+      requiredMark={false}
+      onFinish={onFinish}
+      initialValues={{
+        bio: profile?.bio ?? '',
+        locationName: findLocationName(profile?.locationLat, profile?.locationLng),
+      }}
+    >
+      <Form.Item name="bio" label={t('settings.bioLabel')}>
+        <Input.TextArea rows={3} />
+      </Form.Item>
       {role === 'worker' && (
-        <label>
-          {t('settings.locationLabel')}
-          <Select
-            value={locationName}
-            onChange={setLocationName}
-            options={KIGALI_LOCATIONS.map((location) => ({ value: location.name, label: location.name }))}
-          />
-        </label>
+        <Form.Item name="locationName" label={t('settings.locationLabel')}>
+          <Select options={KIGALI_LOCATIONS.map((l) => ({ value: l.name, label: l.name }))} />
+        </Form.Item>
       )}
-      <button type="submit" className="btn-primary" disabled={saving}>
-        {saving ? t('settings.saving') : t('settings.saveProfile')}
-      </button>
-      {saved && <span className="muted"> {t('settings.saved')}</span>}
-    </form>
+      <Button type="primary" htmlType="submit" loading={saving}>
+        {t('settings.saveProfile')}
+      </Button>
+    </Form>
   );
 };
 

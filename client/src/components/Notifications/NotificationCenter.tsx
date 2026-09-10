@@ -1,29 +1,31 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { Badge, Card, Col, Empty, List, Row, Segmented, Typography } from 'antd';
 import { useAppSelector } from '../../store/hooks';
 import { skillTaskApi } from '../../api/skillTaskApi';
 import { messageApi } from '../../api/messageApi';
 import { notificationApi } from '../../api/notificationApi';
 import { connectSocket } from '../../lib/socket';
+import PageContainer from '../Layout/PageContainer';
 import Avatar from '../common/Avatar';
 import ChatThread from '../common/ChatThread';
 import type { AppNotification, Message } from '../../types';
 
 type Contact = { id: string; name: string };
-type Selection = { type: 'contact'; user: Contact } | { type: 'notification'; id: string } | null;
 type NavState = { contact?: Contact };
 
 const NotificationCenter = () => {
-  const { role, profile } = useAppSelector((state) => state.auth);
+  const { t } = useTranslation();
+  const { role } = useAppSelector((state) => state.auth);
   const location = useLocation();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
-  const [selection, setSelection] = useState<Selection>(null);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [tab, setTab] = useState<'messages' | 'updates'>('messages');
 
-  // Kept in refs so the socket listener (registered once) always sees the
-  // latest values without re-subscribing.
-  const myIdRef = useRef(profile?.id);
-  myIdRef.current = profile?.id;
+  const myIdRef = useRef<string | undefined>(undefined);
+  myIdRef.current = useAppSelector((state) => state.auth.profile?.id);
   const contactsRef = useRef(contacts);
   contactsRef.current = contacts;
 
@@ -36,22 +38,20 @@ const NotificationCenter = () => {
               const contact = role === 'admin' ? task.worker : task.reviewer;
               if (contact) seen.set(contact.id, contact);
             }
-            return Array.from(seen.values());
+            return [...seen.values()];
           })
         : Promise.resolve<Contact[]>([]);
 
     Promise.all([taskContacts, messageApi.listContacts()]).then(([fromTasks, fromHistory]) => {
       const merged = new Map<string, Contact>();
       for (const c of fromTasks) merged.set(c.id, c);
-      for (const c of fromHistory) merged.set(c.id, c);
-
+      for (const c of fromHistory) merged.set(c.id, { id: c.id, name: c.name });
       const navContact = (location.state as NavState | null)?.contact;
       if (navContact) {
         merged.set(navContact.id, navContact);
-        setSelection({ type: 'contact', user: merged.get(navContact.id)! });
+        setSelectedContact(merged.get(navContact.id)!);
       }
-
-      setContacts(Array.from(merged.values()));
+      setContacts([...merged.values()]);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role]);
@@ -60,9 +60,6 @@ const NotificationCenter = () => {
     notificationApi.listNotifications().then(setNotifications);
   }, []);
 
-  // When someone new messages us, pull them into the contacts list so the
-  // conversation is reachable without a refresh. The open thread itself is
-  // kept live by <ChatThread>.
   useEffect(() => {
     const socket = connectSocket();
     const onNewMessage = (message: Message) => {
@@ -74,7 +71,7 @@ const NotificationCenter = () => {
           setContacts((current) => {
             const merged = new Map(current.map((c) => [c.id, c]));
             for (const user of users) merged.set(user.id, { id: user.id, name: user.name });
-            return Array.from(merged.values());
+            return [...merged.values()];
           });
         });
       }
@@ -85,86 +82,115 @@ const NotificationCenter = () => {
     };
   }, []);
 
-  const selectNotification = async (notification: AppNotification) => {
-    setSelection({ type: 'notification', id: notification.id });
-    if (!notification.readAt) {
-      const updated = await notificationApi.markRead(notification.id);
-      setNotifications((current) => current.map((n) => (n.id === updated.id ? updated : n)));
-    }
+  const markRead = async (n: AppNotification) => {
+    if (n.readAt) return;
+    const updated = await notificationApi.markRead(n.id);
+    setNotifications((cur) => cur.map((x) => (x.id === updated.id ? updated : x)));
   };
 
-  const selectedNotification =
-    selection?.type === 'notification' ? notifications.find((n) => n.id === selection.id) : null;
+  const unread = notifications.filter((n) => !n.readAt).length;
 
   return (
-    <div className="section">
-      <h2>Notifications</h2>
-      <div className="chat-layout">
-        <div className="notification-list">
-          <div className="notification-list-heading">Messages</div>
-          {contacts.length === 0 ? (
-            <p className="muted notification-list-empty">
-              You haven't started any conversations yet — visit someone's profile to send them a
-              message.
-            </p>
+    <PageContainer title={t('sidebar.notifications')}>
+      <Segmented
+        value={tab}
+        onChange={(v) => setTab(v as 'messages' | 'updates')}
+        style={{ marginBottom: 20 }}
+        options={[
+          { label: 'Messages', value: 'messages' },
+          {
+            label: (
+              <Badge count={unread} size="small" offset={[8, 0]}>
+                <span>Updates</span>
+              </Badge>
+            ),
+            value: 'updates',
+          },
+        ]}
+      />
+
+      {tab === 'messages' ? (
+        <Row gutter={16}>
+          <Col xs={24} md={8} lg={7}>
+            <Card styles={{ body: { padding: 8 } }}>
+              {contacts.length === 0 ? (
+                <Empty
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description="No conversations yet — message someone from their profile."
+                />
+              ) : (
+                <List
+                  dataSource={contacts}
+                  renderItem={(contact) => (
+                    <List.Item
+                      onClick={() => setSelectedContact(contact)}
+                      style={{
+                        cursor: 'pointer',
+                        padding: '10px 12px',
+                        borderRadius: 8,
+                        background:
+                          selectedContact?.id === contact.id ? 'rgba(24,24,27,0.05)' : undefined,
+                      }}
+                    >
+                      <List.Item.Meta
+                        avatar={<Avatar name={contact.name} size={32} />}
+                        title={contact.name}
+                      />
+                    </List.Item>
+                  )}
+                />
+              )}
+            </Card>
+          </Col>
+          <Col xs={24} md={16} lg={17}>
+            <Card>
+              {selectedContact ? (
+                <ChatThread
+                  key={selectedContact.id}
+                  recipientId={selectedContact.id}
+                  recipientName={selectedContact.name}
+                  showHeader
+                />
+              ) : (
+                <Empty
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description="Select a conversation."
+                />
+              )}
+            </Card>
+          </Col>
+        </Row>
+      ) : (
+        <Card>
+          {notifications.length === 0 ? (
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Nothing yet." />
           ) : (
-            contacts.map((contact) => (
-              <button
-                key={contact.id}
-                type="button"
-                className={`identity notification-row ${
-                  selection?.type === 'contact' && selection.user.id === contact.id ? 'active' : ''
-                }`}
-                onClick={() => setSelection({ type: 'contact', user: contact })}
-              >
-                <Avatar name={contact.name} size={28} />
-                <span className="identity-name">{contact.name}</span>
-              </button>
-            ))
-          )}
-
-          <div className="notification-list-heading">Updates</div>
-          {notifications.length === 0 && <p className="muted notification-list-empty">Nothing yet.</p>}
-          {notifications.map((notification) => (
-            <button
-              key={notification.id}
-              type="button"
-              className={`notification-row ${!notification.readAt ? 'unread' : ''} ${
-                selection?.type === 'notification' && selection.id === notification.id ? 'active' : ''
-              }`}
-              onClick={() => selectNotification(notification)}
-            >
-              {!notification.readAt && <span className="notification-dot" aria-hidden="true" />}
-              <span className="notification-row-text">
-                <span className="notification-row-title">{notification.title}</span>
-                <span className="notification-row-preview">{notification.body}</span>
-              </span>
-            </button>
-          ))}
-        </div>
-
-        <div>
-          {selection?.type === 'contact' && (
-            <ChatThread
-              key={selection.user.id}
-              recipientId={selection.user.id}
-              recipientName={selection.user.name}
-              showHeader
+            <List
+              dataSource={notifications}
+              renderItem={(n) => (
+                <List.Item
+                  onClick={() => markRead(n)}
+                  style={{ cursor: n.readAt ? 'default' : 'pointer' }}
+                >
+                  <List.Item.Meta
+                    avatar={<Badge dot={!n.readAt} />}
+                    title={<Typography.Text strong={!n.readAt}>{n.title}</Typography.Text>}
+                    description={
+                      <>
+                        <div>{n.body}</div>
+                        <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                          {new Date(n.createdAt).toLocaleString()}
+                        </Typography.Text>
+                      </>
+                    }
+                  />
+                </List.Item>
+              )}
             />
           )}
-
-          {selectedNotification && (
-            <div className="notification-detail">
-              <h3>{selectedNotification.title}</h3>
-              <p className="muted">{new Date(selectedNotification.createdAt).toLocaleString()}</p>
-              <p>{selectedNotification.body}</p>
-            </div>
-          )}
-
-          {!selection && <p className="muted">Select a message or update to view it.</p>}
-        </div>
-      </div>
-    </div>
+        </Card>
+      )}
+    </PageContainer>
   );
 };
 

@@ -1,17 +1,16 @@
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
+import { Alert, Button, Form, Input, Typography } from 'antd';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { authApi } from '../../api/authApi';
 
 const ForgotPasswordForm = () => {
   const { t } = useTranslation();
-  const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resetLink, setResetLink] = useState<string | null>(null);
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const onFinish = async ({ email }: { email: string }) => {
     setError(null);
     setSubmitting(true);
     try {
@@ -29,33 +28,43 @@ const ForgotPasswordForm = () => {
   };
 
   return (
-    <div className="auth-form">
-      <h1>{t('auth.forgotPassword.title')}</h1>
-      <p className="auth-form-subtitle">{t('auth.forgotPassword.subtitle')}</p>
+    <div>
+      <Typography.Title level={2} style={{ marginBottom: 4 }}>
+        {t('auth.forgotPassword.title')}
+      </Typography.Title>
+      <Typography.Paragraph type="secondary" style={{ marginBottom: 24 }}>
+        {t('auth.forgotPassword.subtitle')}
+      </Typography.Paragraph>
 
-      {!resetLink ? (
-        <form onSubmit={handleSubmit}>
-          <label>
-            {t('auth.forgotPassword.emailLabel')}
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          </label>
-          {error && <p className="form-error">{error}</p>}
-          <button type="submit" className="btn-primary" disabled={submitting}>
-            {submitting ? t('auth.forgotPassword.submitting') : t('auth.forgotPassword.submit')}
-          </button>
-        </form>
+      {error && <Alert type="error" showIcon message={error} style={{ marginBottom: 16 }} />}
+
+      {resetLink ? (
+        <Alert
+          type="success"
+          showIcon
+          message={t('auth.forgotPassword.noEmailNotice')}
+          description={<Link to={resetLink}>{t('auth.forgotPassword.continueLink')}</Link>}
+          style={{ marginBottom: 16 }}
+        />
       ) : (
-        <div>
-          <p className="muted">{t('auth.forgotPassword.noEmailNotice')}</p>
-          <p>
-            <Link to={resetLink}>{t('auth.forgotPassword.continueLink')}</Link>
-          </p>
-        </div>
+        <Form layout="vertical" onFinish={onFinish} requiredMark={false} size="large">
+          <Form.Item
+            name="email"
+            label={t('auth.forgotPassword.emailLabel')}
+            rules={[{ required: true, type: 'email' }]}
+          >
+            <Input autoComplete="email" />
+          </Form.Item>
+          <Button type="primary" htmlType="submit" block loading={submitting}>
+            {t('auth.forgotPassword.submit')}
+          </Button>
+        </Form>
       )}
 
-      <p className="auth-form-footer">
-        {t('auth.forgotPassword.remembered')} <Link to="/login">{t('auth.forgotPassword.loginLink')}</Link>
-      </p>
+      <Typography.Paragraph style={{ textAlign: 'center', marginTop: 24, marginBottom: 0 }}>
+        {t('auth.forgotPassword.remembered')}{' '}
+        <Link to="/login">{t('auth.forgotPassword.loginLink')}</Link>
+      </Typography.Paragraph>
     </div>
   );
 };

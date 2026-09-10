@@ -13,8 +13,14 @@ const GigThumbnail = ({ gig, size = 40 }: GigThumbnailProps) => {
       <img
         src={resolveAssetUrl(gig.imageUrl)}
         alt=""
-        className="skill-thumbnail"
-        style={{ width: size, height: size }}
+        style={{
+          width: size,
+          height: size,
+          borderRadius: 8,
+          objectFit: 'cover',
+          flexShrink: 0,
+          display: 'block',
+        }}
       />
     );
   }

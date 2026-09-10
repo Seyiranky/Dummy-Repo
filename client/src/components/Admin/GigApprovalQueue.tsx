@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Button, Empty, List, Space, Typography } from 'antd';
 import { adminApi } from '../../api/adminApi';
 import IdentityLink from '../common/IdentityLink';
 import GigThumbnail from '../common/GigThumbnail';
@@ -24,43 +25,58 @@ const GigApprovalQueue = ({ gigs, onReviewed }: GigApprovalQueueProps) => {
 
   const pending = gigs.filter((g) => g.status === 'pending_review');
 
+  if (pending.length === 0) {
+    return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Nothing to review right now." />;
+  }
+
   return (
-    <div>
-      {pending.length === 0 && <p className="muted">Nothing to review right now.</p>}
-      {pending.map((gig) => (
-        <div key={gig.id} className="card">
-          <div className="card-row">
-            <div className="skill-line">
-              <GigThumbnail gig={gig} />
-              <div>
-                <span className="card-title">{gig.title}</span>
-                {gig.client && <IdentityLink id={gig.client.id} name={gig.client.name} size={24} />}
-              </div>
-            </div>
-          </div>
-          <p>{gig.description}</p>
-          <p className="muted">Budget: {gig.budget} RWF</p>
-          <div className="card-row">
-            <button
-              type="button"
-              className="btn-success"
+    <List
+      itemLayout="vertical"
+      dataSource={pending}
+      renderItem={(gig) => (
+        <List.Item
+          key={gig.id}
+          actions={[
+            <Button
+              key="a"
+              type="primary"
+              size="small"
+              loading={busyId === gig.id}
               onClick={() => decide(gig.id, 'approved')}
-              disabled={busyId === gig.id}
             >
               Approve
-            </button>
-            <button
-              type="button"
-              className="btn-danger"
+            </Button>,
+            <Button
+              key="r"
+              danger
+              size="small"
+              loading={busyId === gig.id}
               onClick={() => decide(gig.id, 'rejected')}
-              disabled={busyId === gig.id}
             >
               Reject
-            </button>
-          </div>
-        </div>
-      ))}
-    </div>
+            </Button>,
+          ]}
+        >
+          <List.Item.Meta
+            avatar={<GigThumbnail gig={gig} size={40} />}
+            title={gig.title}
+            description={
+              <Space size={8} wrap>
+                {gig.client && (
+                  <IdentityLink id={gig.client.id} name={gig.client.name} size={20} />
+                )}
+                <Typography.Text type="secondary">
+                  {Number(gig.budget).toLocaleString()} RWF
+                </Typography.Text>
+              </Space>
+            }
+          />
+          <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+            {gig.description}
+          </Typography.Paragraph>
+        </List.Item>
+      )}
+    />
   );
 };
 
