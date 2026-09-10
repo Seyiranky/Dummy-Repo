@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Button, Empty, List, Space, Typography } from 'antd';
 import { skillTaskApi } from '../../api/skillTaskApi';
 import IdentityLink from '../common/IdentityLink';
-import SkillThumbnail from '../common/SkillThumbnail';
 import StatusTag from '../common/StatusTag';
 import type { SkillTask } from '../../types';
 
@@ -62,7 +61,6 @@ const AdminReviewQueue = ({ tasks, onReviewed }: AdminReviewQueueProps) => {
                 ]}
               >
                 <List.Item.Meta
-                  avatar={<SkillThumbnail category={task.skill?.category} size={40} />}
                   title={task.skill?.name}
                   description={
                     task.worker ? (
@@ -95,7 +93,6 @@ const AdminReviewQueue = ({ tasks, onReviewed }: AdminReviewQueueProps) => {
             renderItem={(task) => (
               <List.Item actions={[<StatusTag key="s" status={task.status} />]}>
                 <List.Item.Meta
-                  avatar={<SkillThumbnail category={task.skill?.category} size={32} />}
                   title={task.skill?.name}
                   description={
                     task.worker ? (

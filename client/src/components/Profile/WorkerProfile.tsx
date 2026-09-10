@@ -24,7 +24,6 @@ import { canMessage } from '../../utils/messaging';
 import PageContainer from '../Layout/PageContainer';
 import Avatar from '../common/Avatar';
 import IdentityLink from '../common/IdentityLink';
-import SkillThumbnail from '../common/SkillThumbnail';
 import type { PublicProfile, Review, UserSkill } from '../../types';
 
 const WorkerProfile = () => {
@@ -126,11 +125,8 @@ const WorkerProfile = () => {
                 ) : (
                   <Space size={[8, 8]} wrap>
                     {skills.map((us) => (
-                      <Tag key={us.id} style={{ padding: '4px 10px', borderRadius: 6 }}>
-                        <Space size={6}>
-                          <SkillThumbnail category={us.skill?.category} size={18} />
-                          {us.skill?.name}
-                        </Space>
+                      <Tag key={us.id} style={{ padding: '5px 12px', fontSize: 13, borderRadius: 4 }}>
+                        {us.skill?.name}
                       </Tag>
                     ))}
                   </Space>

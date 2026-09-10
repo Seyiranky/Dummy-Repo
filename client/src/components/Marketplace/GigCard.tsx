@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 import { Card, Flex, Typography } from 'antd';
-import StatusTag from '../common/StatusTag';
 import { gigImageSrc } from '../../utils/gigImage';
 import { locationName } from '../../utils/locationName';
 import type { Gig } from '../../types';
@@ -41,16 +40,18 @@ const GigCard = ({ gig, footNote }: GigCardProps) => {
         </div>
       }
     >
-      <Flex justify="space-between" align="baseline" gap={8}>
-        <Typography.Text
-          type="secondary"
-          style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em' }}
-          ellipsis
-        >
-          {gig.skill?.name}
-        </Typography.Text>
-        <StatusTag status={gig.status} />
-      </Flex>
+      <Typography.Text
+        type="secondary"
+        style={{
+          display: 'block',
+          fontSize: 11,
+          textTransform: 'uppercase',
+          letterSpacing: '0.04em',
+        }}
+        ellipsis
+      >
+        {gig.skill?.name}
+      </Typography.Text>
 
       <Typography.Text
         strong

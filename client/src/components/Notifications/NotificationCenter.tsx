@@ -1,12 +1,27 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Badge, Card, Col, Empty, List, Row, Segmented, Typography } from 'antd';
+import {
+  Avatar as AntAvatar,
+  Badge,
+  Button,
+  Card,
+  Col,
+  Empty,
+  Flex,
+  List,
+  Row,
+  Segmented,
+  Space,
+  Typography,
+} from 'antd';
+import { BellOutlined, CheckOutlined, InboxOutlined, MessageOutlined } from '@ant-design/icons';
 import { useAppSelector } from '../../store/hooks';
 import { skillTaskApi } from '../../api/skillTaskApi';
 import { messageApi } from '../../api/messageApi';
 import { notificationApi } from '../../api/notificationApi';
 import { connectSocket } from '../../lib/socket';
+import { fromNow } from '../../lib/time';
 import PageContainer from '../Layout/PageContainer';
 import Avatar from '../common/Avatar';
 import ChatThread from '../common/ChatThread';
@@ -88,6 +103,13 @@ const NotificationCenter = () => {
     setNotifications((cur) => cur.map((x) => (x.id === updated.id ? updated : x)));
   };
 
+  const markAllRead = async () => {
+    const unread = notifications.filter((n) => !n.readAt);
+    const updated = await Promise.all(unread.map((n) => notificationApi.markRead(n.id)));
+    const byId = new Map(updated.map((u) => [u.id, u]));
+    setNotifications((cur) => cur.map((x) => byId.get(x.id) ?? x));
+  };
+
   const unread = notifications.filter((n) => !n.readAt).length;
 
   return (
@@ -97,12 +119,14 @@ const NotificationCenter = () => {
         onChange={(v) => setTab(v as 'messages' | 'updates')}
         style={{ marginBottom: 20 }}
         options={[
-          { label: 'Messages', value: 'messages' },
+          { label: (<Space size={6}><MessageOutlined />Messages</Space>), value: 'messages' },
           {
             label: (
-              <Badge count={unread} size="small" offset={[8, 0]}>
-                <span>Updates</span>
-              </Badge>
+              <Space size={6}>
+                <BellOutlined />
+                Updates
+                {unread > 0 && <Badge count={unread} size="small" />}
+              </Space>
             ),
             value: 'updates',
           },
@@ -111,39 +135,43 @@ const NotificationCenter = () => {
 
       {tab === 'messages' ? (
         <Row gutter={16}>
-          <Col xs={24} md={8} lg={7}>
-            <Card styles={{ body: { padding: 8 } }}>
+          <Col xs={24} md={9} lg={8}>
+            <Card styles={{ body: { padding: 6 } }} style={{ minHeight: 440 }}>
               {contacts.length === 0 ? (
                 <Empty
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description="No conversations yet — message someone from their profile."
+                  description="No conversations yet."
+                  style={{ padding: '24px 0' }}
                 />
               ) : (
                 <List
                   dataSource={contacts}
-                  renderItem={(contact) => (
-                    <List.Item
-                      onClick={() => setSelectedContact(contact)}
-                      style={{
-                        cursor: 'pointer',
-                        padding: '10px 12px',
-                        borderRadius: 8,
-                        background:
-                          selectedContact?.id === contact.id ? 'rgba(24,24,27,0.05)' : undefined,
-                      }}
-                    >
-                      <List.Item.Meta
-                        avatar={<Avatar name={contact.name} size={32} />}
-                        title={contact.name}
-                      />
-                    </List.Item>
-                  )}
+                  renderItem={(contact) => {
+                    const active = selectedContact?.id === contact.id;
+                    return (
+                      <List.Item
+                        onClick={() => setSelectedContact(contact)}
+                        style={{
+                          cursor: 'pointer',
+                          padding: '10px 12px',
+                          borderRadius: 4,
+                          borderBlockEnd: 'none',
+                          background: active ? 'rgba(24,24,27,0.05)' : undefined,
+                        }}
+                      >
+                        <List.Item.Meta
+                          avatar={<Avatar name={contact.name} size={34} />}
+                          title={<span style={{ fontWeight: active ? 600 : 500 }}>{contact.name}</span>}
+                        />
+                      </List.Item>
+                    );
+                  }}
                 />
               )}
             </Card>
           </Col>
-          <Col xs={24} md={16} lg={17}>
-            <Card>
+          <Col xs={24} md={15} lg={16}>
+            <Card style={{ minHeight: 440 }}>
               {selectedContact ? (
                 <ChatThread
                   key={selectedContact.id}
@@ -152,16 +180,27 @@ const NotificationCenter = () => {
                   showHeader
                 />
               ) : (
-                <Empty
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description="Select a conversation."
-                />
+                <Flex vertical align="center" justify="center" gap={8} style={{ minHeight: 380 }}>
+                  <InboxOutlined style={{ fontSize: 40, color: '#d4d4d8' }} />
+                  <Typography.Text type="secondary">
+                    Select a conversation to start messaging.
+                  </Typography.Text>
+                </Flex>
               )}
             </Card>
           </Col>
         </Row>
       ) : (
-        <Card>
+        <Card
+          title={`${notifications.length} update${notifications.length === 1 ? '' : 's'}`}
+          extra={
+            unread > 0 && (
+              <Button type="link" icon={<CheckOutlined />} onClick={markAllRead}>
+                Mark all read
+              </Button>
+            )
+          }
+        >
           {notifications.length === 0 ? (
             <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Nothing yet." />
           ) : (
@@ -170,19 +209,33 @@ const NotificationCenter = () => {
               renderItem={(n) => (
                 <List.Item
                   onClick={() => markRead(n)}
-                  style={{ cursor: n.readAt ? 'default' : 'pointer' }}
+                  style={{
+                    cursor: n.readAt ? 'default' : 'pointer',
+                    background: n.readAt ? undefined : 'rgba(24,24,27,0.025)',
+                    borderRadius: 4,
+                    paddingInline: 12,
+                  }}
                 >
                   <List.Item.Meta
-                    avatar={<Badge dot={!n.readAt} />}
-                    title={<Typography.Text strong={!n.readAt}>{n.title}</Typography.Text>}
-                    description={
-                      <>
-                        <div>{n.body}</div>
-                        <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                          {new Date(n.createdAt).toLocaleString()}
-                        </Typography.Text>
-                      </>
+                    avatar={
+                      <Badge dot={!n.readAt} offset={[-2, 4]}>
+                        <AntAvatar
+                          shape="square"
+                          size={36}
+                          style={{ background: '#f4f4f5', color: '#52525b' }}
+                          icon={<BellOutlined />}
+                        />
+                      </Badge>
                     }
+                    title={
+                      <Flex justify="space-between" gap={12}>
+                        <Typography.Text strong={!n.readAt}>{n.title}</Typography.Text>
+                        <Typography.Text type="secondary" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
+                          {fromNow(n.createdAt)}
+                        </Typography.Text>
+                      </Flex>
+                    }
+                    description={n.body}
                   />
                 </List.Item>
               )}

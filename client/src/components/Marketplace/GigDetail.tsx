@@ -5,7 +5,7 @@ import {
   Button,
   Card,
   Col,
-  Descriptions,
+  Divider,
   Empty,
   Flex,
   Result,
@@ -14,16 +14,16 @@ import {
   Space,
   Steps,
   Table,
+  Tag,
   Typography,
 } from 'antd';
+import { EnvironmentOutlined, WalletOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useAppSelector } from '../../store/hooks';
 import { gigApi } from '../../api/gigApi';
 import { gigApplicationApi } from '../../api/gigApplicationApi';
 import { adminApi } from '../../api/adminApi';
-import PageContainer from '../Layout/PageContainer';
 import IdentityLink from '../common/IdentityLink';
-import GigThumbnail from '../common/GigThumbnail';
 import StatusTag from '../common/StatusTag';
 import ChatThread from '../common/ChatThread';
 import { gigImageSrc } from '../../utils/gigImage';
@@ -56,9 +56,8 @@ const GigDetail = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  if (loading) return <Skeleton active paragraph={{ rows: 6 }} />;
-  if (!gig)
-    return <Result status="404" title={t('marketplace.gigDetail.notFound')} />;
+  if (loading) return <Skeleton active paragraph={{ rows: 8 }} />;
+  if (!gig) return <Result status="404" title={t('marketplace.gigDetail.notFound')} />;
 
   const isOwner = role === 'client' && profile?.id === gig.clientId;
   const myApplication =
@@ -66,6 +65,8 @@ const GigDetail = () => {
   const sortedApplicants = [...applications].sort(
     (a, b) => (b.worker?.trustScore ?? 0) - (a.worker?.trustScore ?? 0),
   );
+  const cover = gigImageSrc(gig);
+  const loc = locationName(gig.locationLat, gig.locationLng);
 
   const handleApply = async () => {
     if (!id) return;
@@ -109,22 +110,12 @@ const GigDetail = () => {
       render: (_, a) =>
         a.worker ? <IdentityLink id={a.worker.id} name={a.worker.name} size={26} /> : '—',
     },
-    {
-      title: 'Trust',
-      key: 'trust',
-      width: 90,
-      render: (_, a) => a.worker?.trustScore.toFixed(1) ?? '—',
-    },
-    {
-      title: 'Status',
-      key: 'status',
-      width: 120,
-      render: (_, a) => <StatusTag status={a.status} />,
-    },
+    { title: 'Trust', key: 'trust', width: 80, render: (_, a) => a.worker?.trustScore.toFixed(1) ?? '—' },
+    { title: 'Status', key: 'status', width: 110, render: (_, a) => <StatusTag status={a.status} /> },
     {
       title: '',
       key: 'actions',
-      width: 180,
+      width: 170,
       render: (_, a) =>
         role === 'admin' && a.status === 'pending' ? (
           <Space>
@@ -149,69 +140,113 @@ const GigDetail = () => {
     },
   ];
 
+  const hasChat = role === 'worker' && gig.client;
+
   return (
-    <PageContainer
-      title={
-        <Flex align="center" gap={12}>
-          <GigThumbnail gig={gig} size={40} />
-          <span>{gig.title}</span>
-        </Flex>
-      }
-      extra={<StatusTag status={gig.status} />}
-    >
-      <Row gutter={[16, 16]}>
-        <Col xs={24} lg={role === 'worker' && gig.client ? 15 : 24}>
-          <Card
-            cover={
-              gigImageSrc(gig) ? (
-                <div style={{ maxHeight: 260, overflow: 'hidden' }}>
-                  <img
-                    src={gigImageSrc(gig)}
-                    alt=""
-                    style={{ width: '100%', objectFit: 'cover', display: 'block' }}
-                  />
+    <div>
+      {/* Hero */}
+      <div
+        style={{
+          position: 'relative',
+          borderRadius: 6,
+          overflow: 'hidden',
+          border: '1px solid var(--ant-color-border-secondary, #e4e4e7)',
+          marginBottom: 20,
+        }}
+      >
+        {cover && (
+          <img
+            src={cover}
+            alt=""
+            style={{ width: '100%', height: 300, objectFit: 'cover', display: 'block' }}
+          />
+        )}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background:
+              'linear-gradient(to top, rgba(9,9,11,0.82) 0%, rgba(9,9,11,0.25) 45%, rgba(9,9,11,0) 72%)',
+          }}
+        />
+        <div style={{ position: 'absolute', left: 24, right: 24, bottom: 20, color: '#fff' }}>
+          <Space size={8} style={{ marginBottom: 10 }}>
+            <Tag
+              bordered={false}
+              style={{
+                background: 'rgba(255,255,255,0.16)',
+                color: '#fff',
+                textTransform: 'uppercase',
+                fontSize: 11,
+                letterSpacing: '0.04em',
+              }}
+            >
+              {gig.skill?.name}
+            </Tag>
+            {gig.status !== 'open' && <StatusTag status={gig.status} />}
+          </Space>
+          <Typography.Title level={2} style={{ color: '#fff', margin: 0 }}>
+            {gig.title}
+          </Typography.Title>
+        </div>
+      </div>
+
+      <Row gutter={[20, 20]}>
+        <Col xs={24} lg={hasChat ? 15 : 24}>
+          {/* Summary strip */}
+          <Card styles={{ body: { padding: '16px 20px' } }}>
+            <Flex align="center" wrap="wrap" gap={24}>
+              <div>
+                <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                  Budget
+                </Typography.Text>
+                <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.1 }}>
+                  {Number(gig.budget).toLocaleString()}{' '}
+                  <span style={{ fontSize: 13, fontWeight: 400, color: '#71717a' }}>RWF</span>
                 </div>
-              ) : undefined
-            }
-          >
-            <Descriptions column={{ xs: 1, sm: 2 }} size="small">
-              <Descriptions.Item label={t('marketplace.gigDetail.postedBy')}>
+              </div>
+              <Divider type="vertical" style={{ height: 40 }} />
+              <Flex gap={8} align="center">
+                <EnvironmentOutlined style={{ color: '#71717a' }} />
+                <div>
+                  <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block' }}>
+                    Location
+                  </Typography.Text>
+                  <Typography.Text>{loc ?? '—'}</Typography.Text>
+                </div>
+              </Flex>
+              <Divider type="vertical" style={{ height: 40 }} />
+              <div>
+                <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block' }}>
+                  {t('marketplace.gigDetail.postedBy')}
+                </Typography.Text>
                 {gig.client ? (
                   <IdentityLink id={gig.client.id} name={gig.client.name} size={22} />
                 ) : (
                   '—'
                 )}
-              </Descriptions.Item>
-              <Descriptions.Item label="Category">{gig.skill?.name ?? '—'}</Descriptions.Item>
-              <Descriptions.Item label="Location">
-                {locationName(gig.locationLat, gig.locationLng) ?? '—'}
-              </Descriptions.Item>
-              <Descriptions.Item label="Budget">
-                {Number(gig.budget).toLocaleString()} RWF
-              </Descriptions.Item>
-            </Descriptions>
-            <Typography.Paragraph style={{ marginTop: 12, marginBottom: 0 }}>
+              </div>
+            </Flex>
+          </Card>
+
+          <Card title="About this gig" style={{ marginTop: 20 }}>
+            <Typography.Paragraph style={{ margin: 0, fontSize: 14.5, lineHeight: 1.7 }}>
               {gig.description}
             </Typography.Paragraph>
           </Card>
 
-          {isOwner && gig.status === 'pending_review' && (
-            <Card style={{ marginTop: 16 }}>
-              <Typography.Text type="secondary">
-                {t('marketplace.gigDetail.pendingReviewNotice')}
-              </Typography.Text>
-            </Card>
-          )}
-          {isOwner && gig.status === 'rejected' && (
-            <Card style={{ marginTop: 16 }}>
-              <Typography.Text type="danger">
-                {t('marketplace.gigDetail.rejectedNotice')}
+          {isOwner && (gig.status === 'pending_review' || gig.status === 'rejected') && (
+            <Card style={{ marginTop: 20 }}>
+              <Typography.Text type={gig.status === 'rejected' ? 'danger' : 'secondary'}>
+                {gig.status === 'rejected'
+                  ? t('marketplace.gigDetail.rejectedNotice')
+                  : t('marketplace.gigDetail.pendingReviewNotice')}
               </Typography.Text>
             </Card>
           )}
 
           {role === 'admin' && gig.status === 'pending_review' && (
-            <Card style={{ marginTop: 16 }} title={t('marketplace.gigDetail.approveThisGig')}>
+            <Card style={{ marginTop: 20 }} title={t('marketplace.gigDetail.approveThisGig')}>
               <Typography.Paragraph type="secondary">
                 {t('marketplace.gigDetail.approveInstructions')}
               </Typography.Paragraph>
@@ -231,28 +266,46 @@ const GigDetail = () => {
           )}
 
           {role === 'worker' && (
-            <Card style={{ marginTop: 16 }} title={t('marketplace.gigDetail.yourApplication')}>
+            <Card style={{ marginTop: 20 }} title={t('marketplace.gigDetail.yourApplication')}>
               {myApplication ? (
-                <Steps
-                  size="small"
-                  current={
-                    myApplication.status === 'approved'
-                      ? 2
-                      : myApplication.status === 'rejected'
-                        ? 1
-                        : 1
-                  }
-                  status={myApplication.status === 'rejected' ? 'error' : 'process'}
-                  items={[
-                    { title: 'Applied' },
-                    { title: 'Under review' },
-                    { title: 'Approved' },
-                  ]}
-                />
+                <>
+                  <Flex align="center" gap={10} style={{ marginBottom: 16 }}>
+                    <StatusTag status={myApplication.status} />
+                    <Typography.Text type="secondary">
+                      {myApplication.status === 'approved'
+                        ? "You're approved for this gig."
+                        : myApplication.status === 'rejected'
+                          ? 'This application was not accepted.'
+                          : 'Your application is with the reviewer.'}
+                    </Typography.Text>
+                  </Flex>
+                  <Steps
+                    size="small"
+                    progressDot
+                    current={myApplication.status === 'approved' ? 2 : 1}
+                    status={myApplication.status === 'rejected' ? 'error' : 'process'}
+                    items={[
+                      { title: 'Applied' },
+                      { title: 'Under review' },
+                      { title: 'Approved' },
+                    ]}
+                  />
+                </>
               ) : gig.status === 'open' ? (
-                <Button type="primary" loading={applying} onClick={handleApply}>
-                  {t('marketplace.gigDetail.applyButton')}
-                </Button>
+                <Flex align="center" justify="space-between" wrap="wrap" gap={12}>
+                  <Typography.Text type="secondary">
+                    Ready to take this on? Send your application to the client.
+                  </Typography.Text>
+                  <Button
+                    type="primary"
+                    size="large"
+                    icon={<WalletOutlined />}
+                    loading={applying}
+                    onClick={handleApply}
+                  >
+                    {t('marketplace.gigDetail.applyButton')}
+                  </Button>
+                </Flex>
               ) : (
                 <Typography.Text type="secondary">
                   {gig.status === 'pending_review'
@@ -265,7 +318,7 @@ const GigDetail = () => {
 
           {(role === 'admin' || isOwner) && (
             <Card
-              style={{ marginTop: 16 }}
+              style={{ marginTop: 20 }}
               title={t('marketplace.gigDetail.applicants', { count: applications.length })}
             >
               {applications.length === 0 ? (
@@ -286,11 +339,11 @@ const GigDetail = () => {
           )}
         </Col>
 
-        {role === 'worker' && gig.client && (
+        {hasChat && gig.client && (
           <Col xs={24} lg={9}>
             <Card
               title={t('marketplace.gigDetail.messageClient')}
-              style={{ position: 'sticky', top: 88 }}
+              style={{ position: 'sticky', top: 84 }}
             >
               <Typography.Paragraph type="secondary" style={{ fontSize: 13 }}>
                 {t('marketplace.gigDetail.messageClientHint', { name: gig.client.name })}
@@ -307,7 +360,7 @@ const GigDetail = () => {
           </Col>
         )}
       </Row>
-    </PageContainer>
+    </div>
   );
 };
 

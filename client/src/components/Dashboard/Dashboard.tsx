@@ -26,7 +26,6 @@ import { adminApi } from '../../api/adminApi';
 import { LineChart, PieChart } from '../common/charts';
 import PageContainer from '../Layout/PageContainer';
 import IdentityLink from '../common/IdentityLink';
-import SkillThumbnail from '../common/SkillThumbnail';
 import StatusTag from '../common/StatusTag';
 import SkillVerificationForm from '../Verification/SkillVerificationForm';
 import AdminReviewQueue from '../Verification/AdminReviewQueue';
@@ -207,7 +206,6 @@ const Dashboard = () => {
                     renderItem={(task) => (
                       <List.Item>
                         <List.Item.Meta
-                          avatar={<SkillThumbnail category={task.skill?.category} size={28} />}
                           title={task.skill?.name}
                           description={
                             task.worker ? (
@@ -311,11 +309,11 @@ const Dashboard = () => {
                   ) : (
                     <Space size={[8, 8]} wrap>
                       {verifiedSkills.map((us) => (
-                        <Tag key={us.id} style={{ padding: '4px 10px', borderRadius: 6 }}>
-                          <Space size={6}>
-                            <SkillThumbnail category={us.skill?.category} size={18} />
-                            {us.skill?.name}
-                          </Space>
+                        <Tag
+                          key={us.id}
+                          style={{ padding: '5px 12px', fontSize: 13, borderRadius: 4 }}
+                        >
+                          {us.skill?.name}
                         </Tag>
                       ))}
                     </Space>

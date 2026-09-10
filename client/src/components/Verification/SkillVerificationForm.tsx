@@ -3,7 +3,6 @@ import { Alert, Button, Divider, Form, Input, List, Select, Typography } from 'a
 import { skillApi } from '../../api/skillApi';
 import { skillTaskApi } from '../../api/skillTaskApi';
 import IdentityLink from '../common/IdentityLink';
-import SkillThumbnail from '../common/SkillThumbnail';
 import StatusTag from '../common/StatusTag';
 import type { Skill, SkillTask } from '../../types';
 
@@ -76,7 +75,6 @@ const SkillVerificationForm = ({ tasks, onSubmitted }: SkillVerificationFormProp
         renderItem={(task) => (
           <List.Item actions={[<StatusTag key="s" status={task.status} />]}>
             <List.Item.Meta
-              avatar={<SkillThumbnail category={task.skill?.category} size={32} />}
               title={task.skill?.name}
               description={
                 task.reviewer ? (
