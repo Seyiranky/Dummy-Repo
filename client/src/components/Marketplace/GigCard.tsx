@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 import { Card, Flex, Typography } from 'antd';
-import { EnvironmentOutlined } from '@ant-design/icons';
 import StatusTag from '../common/StatusTag';
 import { gigImageSrc } from '../../utils/gigImage';
 import { locationName } from '../../utils/locationName';
@@ -21,13 +20,14 @@ const GigCard = ({ gig, footNote }: GigCardProps) => {
       hoverable
       onClick={() => navigate(`/gigs/${gig.id}`)}
       styles={{ body: { padding: 14 } }}
+      style={{ height: '100%' }}
       cover={
         <div
           style={{
-            aspectRatio: '4 / 3',
+            aspectRatio: '16 / 10',
             overflow: 'hidden',
-            background: 'var(--ant-color-fill-tertiary, #f4f4f5)',
-            borderBottom: '1px solid var(--ant-color-border-secondary, #e6e6e8)',
+            background: 'var(--ant-color-fill-tertiary, #f1f1f2)',
+            borderBottom: '1px solid var(--ant-color-border-secondary, #e4e4e7)',
           }}
         >
           {src && (
@@ -41,59 +41,49 @@ const GigCard = ({ gig, footNote }: GigCardProps) => {
         </div>
       }
     >
-      <Flex justify="space-between" align="flex-start" gap={8}>
+      <Flex justify="space-between" align="baseline" gap={8}>
         <Typography.Text
-          strong
-          ellipsis={{ tooltip: gig.title }}
-          style={{ fontSize: 14, lineHeight: 1.35 }}
+          type="secondary"
+          style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em' }}
+          ellipsis
         >
-          {gig.title}
+          {gig.skill?.name}
         </Typography.Text>
         <StatusTag status={gig.status} />
       </Flex>
 
+      <Typography.Text
+        strong
+        ellipsis={{ tooltip: gig.title }}
+        style={{ display: 'block', fontSize: 14, lineHeight: 1.35, marginTop: 4 }}
+      >
+        {gig.title}
+      </Typography.Text>
+
       <Typography.Paragraph
         type="secondary"
         ellipsis={{ rows: 2 }}
-        style={{ margin: '6px 0 0', fontSize: 12.5, minHeight: 34 }}
+        style={{ margin: '4px 0 0', fontSize: 12.5, minHeight: 34 }}
       >
         {gig.description}
       </Typography.Paragraph>
 
       <Flex
-        align="center"
-        gap={6}
-        style={{
-          marginTop: 8,
-          color: '#71717a',
-          fontSize: 12,
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-        }}
+        justify="space-between"
+        align="baseline"
+        style={{ marginTop: 10, borderTop: '1px solid var(--ant-color-border-secondary,#e4e4e7)', paddingTop: 10 }}
       >
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{gig.skill?.name}</span>
-        {loc && (
-          <>
-            <span aria-hidden>·</span>
-            <EnvironmentOutlined />
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{loc}</span>
-          </>
-        )}
+        <Typography.Text strong style={{ fontSize: 15 }}>
+          {Number(gig.budget).toLocaleString()}
+          <Typography.Text type="secondary" style={{ fontSize: 12, fontWeight: 400 }}>
+            {' '}
+            RWF
+          </Typography.Text>
+        </Typography.Text>
+        <Typography.Text type="secondary" style={{ fontSize: 12 }} ellipsis>
+          {footNote ?? loc}
+        </Typography.Text>
       </Flex>
-
-      <Typography.Title level={4} style={{ margin: '10px 0 0' }}>
-        {Number(gig.budget).toLocaleString()}
-        <Typography.Text type="secondary" style={{ fontSize: 13, fontWeight: 400 }}>
-          {' '}
-          RWF
-        </Typography.Text>
-      </Typography.Title>
-
-      {footNote && (
-        <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-          {footNote}
-        </Typography.Text>
-      )}
     </Card>
   );
 };
