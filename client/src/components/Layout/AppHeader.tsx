@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Badge, Button, Flex, Segmented, Space, Tooltip, Typography } from 'antd';
+import { Badge, Button, Flex, Grid, Segmented, Space, Tooltip, Typography } from 'antd';
 import {
   BellOutlined,
   BulbOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import { useAppSelector } from '../../store/hooks';
 import { notificationApi } from '../../api/notificationApi';
@@ -25,14 +26,16 @@ const pageTitle = (pathname: string, t: (k: string) => string): string => {
 interface AppHeaderProps {
   collapsed: boolean;
   onToggle: () => void;
+  onSearch: () => void;
 }
 
-const AppHeader = ({ collapsed, onToggle }: AppHeaderProps) => {
+const AppHeader = ({ collapsed, onToggle, onSearch }: AppHeaderProps) => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { role } = useAppSelector((state) => state.auth);
   const { isDark, setMode } = useThemeMode();
+  const screens = Grid.useBreakpoint();
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
@@ -59,6 +62,42 @@ const AppHeader = ({ collapsed, onToggle }: AppHeaderProps) => {
       </Space>
 
       <Space size={8} align="center">
+        {screens.sm ? (
+          <button
+            type="button"
+            onClick={onSearch}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              height: 32,
+              padding: '0 10px',
+              borderRadius: 4,
+              border: '1px solid var(--ant-color-border, #e4e4e7)',
+              background: 'var(--ant-color-fill-quaternary, #fafafa)',
+              color: '#71717a',
+              cursor: 'pointer',
+              font: 'inherit',
+              fontSize: 13,
+            }}
+          >
+            <SearchOutlined />
+            <span>Search</span>
+            <kbd
+              style={{
+                fontSize: 11,
+                padding: '1px 5px',
+                borderRadius: 3,
+                border: '1px solid var(--ant-color-border, #e4e4e7)',
+                background: 'var(--ant-color-bg-container, #fff)',
+              }}
+            >
+              ⌘K
+            </kbd>
+          </button>
+        ) : (
+          <Button type="text" aria-label="Search" icon={<SearchOutlined />} onClick={onSearch} />
+        )}
         <Segmented
           size="small"
           value={lang}

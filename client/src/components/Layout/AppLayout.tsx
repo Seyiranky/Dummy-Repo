@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, Outlet } from 'react-router-dom';
 import { Grid, Layout } from 'antd';
 import SideNav from './SideNav';
 import SideFooter from './SideFooter';
 import AppHeader from './AppHeader';
+import CommandPalette from './CommandPalette';
 import { useThemeMode } from '../../theme/ThemeProvider';
 import logo from '../../assets/logo.png';
 
@@ -14,7 +15,19 @@ const AppLayout = () => {
   const { isDark } = useThemeMode();
   const isMobile = !screens.lg;
   const [collapsed, setCollapsed] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const sidebarCollapsed = isMobile ? true : collapsed;
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSearchOpen((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const hairline = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(24,24,27,0.08)';
 
@@ -76,7 +89,11 @@ const AppLayout = () => {
             borderBottom: `1px solid ${hairline}`,
           }}
         >
-          <AppHeader collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
+          <AppHeader
+            collapsed={collapsed}
+            onToggle={() => setCollapsed((c) => !c)}
+            onSearch={() => setSearchOpen(true)}
+          />
         </Header>
         <Content style={{ padding: screens.xs ? 16 : 28 }}>
           <div style={{ maxWidth: 1180, margin: '0 auto' }}>
@@ -84,6 +101,8 @@ const AppLayout = () => {
           </div>
         </Content>
       </Layout>
+
+      <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
     </Layout>
   );
 };

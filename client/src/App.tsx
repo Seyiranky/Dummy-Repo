@@ -17,6 +17,7 @@ import AdminPendingGigsPage from './pages/AdminPendingGigsPage';
 import AdminCompletedGigsPage from './pages/AdminCompletedGigsPage';
 import WalletPage from './pages/WalletPage';
 import SettingsPage from './pages/SettingsPage';
+import NotFoundPage from './pages/NotFoundPage';
 import { useAppDispatch, useAppSelector } from './store/hooks';
 import { fetchCurrentUser } from './store/slices/authSlice';
 
@@ -62,6 +63,8 @@ function App() {
             <Route path="/admin/gigs/pending" element={<AdminPendingGigsPage />} />
             <Route path="/admin/gigs/completed" element={<AdminCompletedGigsPage />} />
           </Route>
+
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Route>
     </Routes>

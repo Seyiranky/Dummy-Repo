@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Button, Form, Input, InputNumber, Select, Upload } from 'antd';
+import { Alert, App, Button, Form, Input, InputNumber, Select, Upload } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd';
 import { skillApi } from '../../api/skillApi';
@@ -24,6 +24,7 @@ interface GigFormValues {
 
 const GigForm = ({ onPosted }: GigFormProps) => {
   const { t } = useTranslation();
+  const { message } = App.useApp();
   const dispatch = useAppDispatch();
   const [skills, setSkills] = useState<Skill[]>([]);
   const [fileList, setFileList] = useState<UploadFile[]>([]);
@@ -54,6 +55,7 @@ const GigForm = ({ onPosted }: GigFormProps) => {
       );
       setFileList([]);
       dispatch(fetchGigs());
+      message.success('Gig posted — an admin will review it shortly.');
       onPosted?.();
     } catch {
       setError(t('marketplace.gigForm.submitError'));

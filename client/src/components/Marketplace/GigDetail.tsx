@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
+  App,
+  Breadcrumb,
   Button,
   Card,
   Col,
@@ -17,7 +19,7 @@ import {
   Tag,
   Typography,
 } from 'antd';
-import { EnvironmentOutlined } from '@ant-design/icons';
+import { HomeOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useAppSelector } from '../../store/hooks';
 import { gigApi } from '../../api/gigApi';
@@ -41,6 +43,7 @@ const MetaRow = ({ label, children }: { label: string; children: React.ReactNode
 
 const GigDetail = () => {
   const { t } = useTranslation();
+  const { message } = App.useApp();
   const { id } = useParams<{ id: string }>();
   const { role, profile } = useAppSelector((state) => state.auth);
   const [gig, setGig] = useState<Gig | null>(null);
@@ -82,7 +85,10 @@ const GigDetail = () => {
     setApplying(true);
     try {
       await gigApplicationApi.applyToGig(id);
+      message.success('Application sent to the client.');
       refresh();
+    } catch {
+      message.error('Could not send your application.');
     } finally {
       setApplying(false);
     }
@@ -106,6 +112,7 @@ const GigDetail = () => {
     setBusyId(applicationId);
     try {
       await gigApplicationApi.reviewApplication(applicationId, decision);
+      message.success(decision === 'approved' ? 'Applicant approved.' : 'Applicant rejected.');
       refresh();
     } finally {
       setBusyId(null);
@@ -153,6 +160,14 @@ const GigDetail = () => {
 
   return (
     <div>
+      <Breadcrumb
+        style={{ marginBottom: 14 }}
+        items={[
+          { title: <Link to="/dashboard"><HomeOutlined /></Link> },
+          { title: <Link to="/marketplace">{t('sidebar.marketplace')}</Link> },
+          { title: gig.title },
+        ]}
+      />
       {/* Header */}
       <Space size={8} style={{ marginBottom: 8 }}>
         <Tag
@@ -162,23 +177,9 @@ const GigDetail = () => {
         </Tag>
         {gig.status !== 'open' && <StatusTag status={gig.status} />}
       </Space>
-      <Typography.Title level={2} style={{ margin: '0 0 8px' }}>
+      <Typography.Title level={2} style={{ margin: '0 0 24px' }}>
         {gig.title}
       </Typography.Title>
-      <Space split={<Divider type="vertical" />} wrap style={{ color: '#71717a', marginBottom: 24 }}>
-        {gig.client && (
-          <span>
-            {t('marketplace.gigDetail.postedBy')}{' '}
-            <IdentityLink id={gig.client.id} name={gig.client.name} size={20} />
-          </span>
-        )}
-        {loc && (
-          <Space size={4}>
-            <EnvironmentOutlined />
-            {loc}
-          </Space>
-        )}
-      </Space>
 
       <Row gutter={[24, 24]}>
         <Col xs={24} lg={15}>
