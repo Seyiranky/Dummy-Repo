@@ -1,13 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Card, Col, Empty, Flex, Row, Skeleton, Switch, Tooltip, Typography } from 'antd';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchGigs } from '../../store/slices/gigSlice';
-import { locationName } from '../../utils/locationName';
 import { distanceKm } from '../../utils/distance';
-import GigThumbnail from '../common/GigThumbnail';
-import StatusTag from '../common/StatusTag';
+import GigCard from './GigCard';
 
 const GigFeed = () => {
   const { t } = useTranslation();
@@ -59,10 +56,10 @@ const GigFeed = () => {
 
       {status === 'loading' ? (
         <Row gutter={[16, 16]}>
-          {[0, 1, 2].map((i) => (
-            <Col xs={24} sm={12} lg={8} key={i}>
-              <Card>
-                <Skeleton active />
+          {[0, 1, 2, 3].map((i) => (
+            <Col xs={24} sm={12} lg={8} xl={6} key={i}>
+              <Card cover={<div style={{ aspectRatio: '4 / 3', background: '#f4f4f5' }} />}>
+                <Skeleton active paragraph={{ rows: 2 }} />
               </Card>
             </Col>
           ))}
@@ -74,45 +71,22 @@ const GigFeed = () => {
       ) : (
         <Row gutter={[16, 16]}>
           {visibleGigs.map((gig) => (
-            <Col xs={24} sm={12} lg={8} key={gig.id}>
-              <Card hoverable style={{ height: '100%' }} styles={{ body: { display: 'flex', flexDirection: 'column', gap: 12, height: '100%' } }}>
-                <Flex gap={12} align="flex-start">
-                  <GigThumbnail gig={gig} size={44} />
-                  <div style={{ minWidth: 0 }}>
-                    <Typography.Text strong ellipsis style={{ display: 'block' }}>
-                      {gig.title}
-                    </Typography.Text>
-                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                      {gig.skill?.name}
-                      {locationName(gig.locationLat, gig.locationLng) &&
-                        ` · ${locationName(gig.locationLat, gig.locationLng)}`}
-                      {sortByDistance &&
-                        ` · ${t('marketplace.gigFeed.distanceAway', {
-                          distance: distanceKm(
-                            workerLat!,
-                            workerLng!,
-                            gig.locationLat,
-                            gig.locationLng,
-                          ).toFixed(1),
-                        })}`}
-                    </Typography.Text>
-                  </div>
-                </Flex>
-                <Typography.Paragraph
-                  type="secondary"
-                  ellipsis={{ rows: 2 }}
-                  style={{ margin: 0, fontSize: 13 }}
-                >
-                  {gig.description}
-                </Typography.Paragraph>
-                <Flex justify="space-between" align="center" style={{ marginTop: 'auto' }}>
-                  <Typography.Text strong>
-                    {Number(gig.budget).toLocaleString()} RWF
-                  </Typography.Text>
-                  <StatusTag status={gig.status} />
-                </Flex>
-                <Link to={`/gigs/${gig.id}`}>{t('marketplace.gigFeed.viewDetails')} →</Link>
-              </Card>
+            <Col xs={24} sm={12} lg={8} xl={6} key={gig.id}>
+              <GigCard
+                gig={gig}
+                footNote={
+                  sortByDistance
+                    ? t('marketplace.gigFeed.distanceAway', {
+                        distance: distanceKm(
+                          workerLat!,
+                          workerLng!,
+                          gig.locationLat,
+                          gig.locationLng,
+                        ).toFixed(1),
+                      })
+                    : undefined
+                }
+              />
             </Col>
           ))}
         </Row>

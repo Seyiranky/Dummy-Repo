@@ -26,6 +26,7 @@ import IdentityLink from '../common/IdentityLink';
 import GigThumbnail from '../common/GigThumbnail';
 import StatusTag from '../common/StatusTag';
 import ChatThread from '../common/ChatThread';
+import { gigImageSrc } from '../../utils/gigImage';
 import { locationName } from '../../utils/locationName';
 import type { Gig, GigApplication } from '../../types';
 
@@ -160,7 +161,19 @@ const GigDetail = () => {
     >
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={role === 'worker' && gig.client ? 15 : 24}>
-          <Card>
+          <Card
+            cover={
+              gigImageSrc(gig) ? (
+                <div style={{ maxHeight: 260, overflow: 'hidden' }}>
+                  <img
+                    src={gigImageSrc(gig)}
+                    alt=""
+                    style={{ width: '100%', objectFit: 'cover', display: 'block' }}
+                  />
+                </div>
+              ) : undefined
+            }
+          >
             <Descriptions column={{ xs: 1, sm: 2 }} size="small">
               <Descriptions.Item label={t('marketplace.gigDetail.postedBy')}>
                 {gig.client ? (
