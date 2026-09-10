@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom';
-import { Card, Flex, Typography } from 'antd';
+import { Card, Flex, Tooltip, Typography } from 'antd';
+import { HeartFilled, HeartOutlined } from '@ant-design/icons';
+import { useSavedGigs } from '../../hooks/useSavedGigs';
 import { gigImageSrc } from '../../utils/gigImage';
 import { locationName } from '../../utils/locationName';
 import type { Gig } from '../../types';
@@ -11,8 +13,10 @@ interface GigCardProps {
 
 const GigCard = ({ gig, footNote }: GigCardProps) => {
   const navigate = useNavigate();
+  const { isSaved, toggle } = useSavedGigs();
   const src = gigImageSrc(gig);
   const loc = locationName(gig.locationLat, gig.locationLng);
+  const saved = isSaved(gig.id);
 
   return (
     <Card
@@ -23,6 +27,7 @@ const GigCard = ({ gig, footNote }: GigCardProps) => {
       cover={
         <div
           style={{
+            position: 'relative',
             aspectRatio: '16 / 10',
             overflow: 'hidden',
             background: 'var(--ant-color-fill-tertiary, #f1f1f2)',
@@ -37,6 +42,32 @@ const GigCard = ({ gig, footNote }: GigCardProps) => {
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
             />
           )}
+          <Tooltip title={saved ? 'Remove from saved' : 'Save gig'}>
+            <button
+              type="button"
+              aria-label={saved ? 'Remove from saved' : 'Save gig'}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggle(gig.id);
+              }}
+              style={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                width: 30,
+                height: 30,
+                display: 'grid',
+                placeItems: 'center',
+                borderRadius: 999,
+                border: 'none',
+                cursor: 'pointer',
+                background: 'rgba(255,255,255,0.92)',
+                color: saved ? '#e11d48' : '#52525b',
+              }}
+            >
+              {saved ? <HeartFilled /> : <HeartOutlined />}
+            </button>
+          </Tooltip>
         </div>
       }
     >
@@ -72,7 +103,11 @@ const GigCard = ({ gig, footNote }: GigCardProps) => {
       <Flex
         justify="space-between"
         align="baseline"
-        style={{ marginTop: 10, borderTop: '1px solid var(--ant-color-border-secondary,#e4e4e7)', paddingTop: 10 }}
+        style={{
+          marginTop: 10,
+          borderTop: '1px solid var(--ant-color-border-secondary,#e4e4e7)',
+          paddingTop: 10,
+        }}
       >
         <Typography.Text strong style={{ fontSize: 15 }}>
           {Number(gig.budget).toLocaleString()}

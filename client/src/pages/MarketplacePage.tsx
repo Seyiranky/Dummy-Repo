@@ -1,20 +1,37 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Drawer, Segmented } from 'antd';
+import { Badge, Button, Drawer, Segmented } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useAppSelector } from '../store/hooks';
+import { useSavedGigs } from '../hooks/useSavedGigs';
 import PageContainer from '../components/Layout/PageContainer';
 import GigForm from '../components/Marketplace/GigForm';
 import GigFeed from '../components/Marketplace/GigFeed';
 import MatchList from '../components/Marketplace/MatchList';
+import MyApplications from '../components/Marketplace/MyApplications';
 
-type MarketplaceTab = 'gigs' | 'matches';
+type Tab = 'gigs' | 'saved' | 'applications' | 'matches';
 
 const MarketplacePage = () => {
   const { t } = useTranslation();
   const role = useAppSelector((state) => state.auth.role);
-  const [tab, setTab] = useState<MarketplaceTab>('gigs');
+  const { savedIds } = useSavedGigs();
+  const [tab, setTab] = useState<Tab>('gigs');
   const [postingGig, setPostingGig] = useState(false);
+
+  const options = [
+    { label: role === 'client' ? 'Your gigs' : 'Open gigs', value: 'gigs' },
+    {
+      label: (
+        <span>
+          Saved{savedIds.length ? <Badge count={savedIds.length} size="small" offset={[6, -2]} /> : null}
+        </span>
+      ),
+      value: 'saved',
+    },
+    ...(role === 'worker' ? [{ label: 'My applications', value: 'applications' }] : []),
+    { label: 'Your matches', value: 'matches' },
+  ];
 
   return (
     <PageContainer
@@ -29,15 +46,15 @@ const MarketplacePage = () => {
     >
       <Segmented
         value={tab}
-        onChange={(v) => setTab(v as MarketplaceTab)}
+        onChange={(v) => setTab(v as Tab)}
         style={{ marginBottom: 20 }}
-        options={[
-          { label: role === 'client' ? 'Your gigs' : 'Open gigs', value: 'gigs' },
-          { label: 'Your matches', value: 'matches' },
-        ]}
+        options={options}
       />
 
-      {tab === 'gigs' ? <GigFeed /> : <MatchList />}
+      {tab === 'gigs' && <GigFeed />}
+      {tab === 'saved' && <GigFeed savedOnly />}
+      {tab === 'applications' && <MyApplications />}
+      {tab === 'matches' && <MatchList />}
 
       <Drawer
         title="Post a gig"

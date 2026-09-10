@@ -4,12 +4,13 @@ import { Card, Col, Empty, Flex, Input, Row, Select, Skeleton, Switch, Tooltip, 
 import { SearchOutlined } from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchGigs } from '../../store/slices/gigSlice';
+import { useSavedGigs } from '../../hooks/useSavedGigs';
 import { distanceKm } from '../../utils/distance';
 import GigCard from './GigCard';
 
 type SortKey = 'newest' | 'budget_desc' | 'budget_asc' | 'nearest';
 
-const GigFeed = () => {
+const GigFeed = ({ savedOnly = false }: { savedOnly?: boolean }) => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const { role, profile } = useAppSelector((state) => state.auth);
@@ -28,13 +29,14 @@ const GigFeed = () => {
   const workerLng = role === 'worker' ? profile?.locationLng : null;
   const hasWorkerLocation = workerLat != null && workerLng != null;
 
-  const base = useMemo(
-    () =>
-      role === 'client' && profile
-        ? gigs.filter((g) => g.clientId === profile.id)
-        : gigs.filter((g) => g.status === 'open'),
-    [gigs, role, profile],
-  );
+  const { savedIds } = useSavedGigs();
+
+  const base = useMemo(() => {
+    if (savedOnly) return gigs.filter((g) => savedIds.includes(g.id));
+    return role === 'client' && profile
+      ? gigs.filter((g) => g.clientId === profile.id)
+      : gigs.filter((g) => g.status === 'open');
+  }, [gigs, role, profile, savedOnly, savedIds]);
 
   const categories = useMemo(() => {
     const set = new Map<string, string>();
@@ -122,7 +124,15 @@ const GigFeed = () => {
         </Row>
       ) : finalGigs.length === 0 ? (
         <Card>
-          <Empty description={search || category !== 'all' ? 'No gigs match your filters.' : t('marketplace.gigFeed.empty')} />
+          <Empty
+            description={
+              savedOnly
+                ? 'No saved gigs yet — tap the heart on a gig to save it.'
+                : search || category !== 'all'
+                  ? 'No gigs match your filters.'
+                  : t('marketplace.gigFeed.empty')
+            }
+          />
         </Card>
       ) : (
         <>

@@ -5,6 +5,7 @@ import SideNav from './SideNav';
 import SideFooter from './SideFooter';
 import AppHeader from './AppHeader';
 import CommandPalette from './CommandPalette';
+import ShortcutsModal from './ShortcutsModal';
 import { useThemeMode } from '../../theme/ThemeProvider';
 import logo from '../../assets/logo.png';
 
@@ -16,6 +17,7 @@ const AppLayout = () => {
   const isMobile = !screens.lg;
   const [collapsed, setCollapsed] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const sidebarCollapsed = isMobile ? true : collapsed;
 
   useEffect(() => {
@@ -23,6 +25,17 @@ const AppLayout = () => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setSearchOpen((v) => !v);
+        return;
+      }
+      const target = e.target as HTMLElement | null;
+      const typing =
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable);
+      if (e.key === '?' && !typing) {
+        e.preventDefault();
+        setHelpOpen((v) => !v);
       }
     };
     window.addEventListener('keydown', onKey);
@@ -103,6 +116,7 @@ const AppLayout = () => {
       </Layout>
 
       <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <ShortcutsModal open={helpOpen} onClose={() => setHelpOpen(false)} />
     </Layout>
   );
 };

@@ -13,7 +13,6 @@ import {
   Row,
   Space,
   Statistic,
-  Steps,
   Tag,
 } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
@@ -23,10 +22,14 @@ import { skillTaskApi } from '../../api/skillTaskApi';
 import { transactionApi } from '../../api/transactionApi';
 import { userApi } from '../../api/userApi';
 import { adminApi } from '../../api/adminApi';
+import { gigApi } from '../../api/gigApi';
+import { gigApplicationApi } from '../../api/gigApplicationApi';
 import { LineChart, PieChart } from '../common/charts';
 import PageContainer from '../Layout/PageContainer';
 import IdentityLink from '../common/IdentityLink';
 import StatusTag from '../common/StatusTag';
+import ActivityFeed from './ActivityFeed';
+import OnboardingChecklist, { type ChecklistItem } from './OnboardingChecklist';
 import SkillVerificationForm from '../Verification/SkillVerificationForm';
 import AdminReviewQueue from '../Verification/AdminReviewQueue';
 import GigApprovalQueue from '../Admin/GigApprovalQueue';
@@ -41,6 +44,8 @@ const Dashboard = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [verifiedSkills, setVerifiedSkills] = useState<UserSkill[]>([]);
   const [gigs, setGigs] = useState<Gig[]>([]);
+  const [myGigCount, setMyGigCount] = useState(0);
+  const [myApplicationCount, setMyApplicationCount] = useState(0);
   const [modal, setModal] = useState<'skill' | 'review' | 'gig' | null>(null);
 
   useEffect(() => {
@@ -58,11 +63,19 @@ const Dashboard = () => {
     if (role === 'worker' || role === 'admin') refreshTasks();
     if (role === 'worker' || role === 'client') transactionApi.listTransactions().then(setTransactions);
     if (role === 'admin') refreshGigs();
+    if (role === 'worker') {
+      gigApplicationApi.listApplications().then((a) => setMyApplicationCount(a.length));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role]);
 
   useEffect(() => {
     if (role === 'worker' && profile) userApi.getUserSkills(profile.id).then(setVerifiedSkills);
+    if (role === 'client' && profile) {
+      gigApi
+        .listGigs()
+        .then((all) => setMyGigCount(all.filter((g) => g.clientId === profile.id).length));
+    }
   }, [role, profile]);
 
   const pendingReviews = tasks.filter((x) => x.status === 'pending');
@@ -99,6 +112,50 @@ const Dashboard = () => {
   const isEarner = role === 'worker' || role === 'client';
   const showCharts = isEarner && (earningsSeries.length >= 2 || matchStatusSlices.length > 0);
 
+  const checklist: ChecklistItem[] =
+    role === 'worker'
+      ? [
+          {
+            key: 'loc',
+            label: 'Add your location',
+            done: profile.locationLat != null,
+            to: '/settings',
+            action: 'Set location',
+          },
+          {
+            key: 'skill',
+            label: 'Submit a skill for verification',
+            done: verifiedSkills.length > 0 || tasks.length > 0,
+            to: '/dashboard',
+            action: 'Add skill',
+          },
+          {
+            key: 'apply',
+            label: 'Apply to your first gig',
+            done: myApplicationCount > 0,
+            to: '/marketplace',
+            action: 'Browse gigs',
+          },
+        ]
+      : role === 'client'
+        ? [
+            {
+              key: 'bio',
+              label: 'Add a short bio',
+              done: !!profile.bio,
+              to: '/settings',
+              action: 'Edit profile',
+            },
+            {
+              key: 'post',
+              label: 'Post your first gig',
+              done: myGigCount > 0,
+              to: '/marketplace',
+              action: 'Post a gig',
+            },
+          ]
+        : [];
+
   const kpi = (title: string, value: number | string, suffix?: string, accent?: string) => (
     <Col xs={12} lg={8}>
       <Card size="small" style={{ height: '100%' }}>
@@ -125,6 +182,8 @@ const Dashboard = () => {
           }
         />
       )}
+
+      {isEarner && <OnboardingChecklist items={checklist} />}
 
       <Row gutter={[16, 16]}>
         {isEarner ? (
@@ -325,23 +384,17 @@ const Dashboard = () => {
         )}
       </Row>
 
-      {isEarner && matches.length === 0 && (
-        <Card title={t('dashboard.getStarted')} style={{ marginTop: 16 }}>
-          <Steps
-            direction="vertical"
-            size="small"
-            current={role === 'worker' ? (verifiedSkills.length ? 1 : 0) : 0}
-            items={
-              role === 'worker'
-                ? [
-                    { title: t('dashboard.submitSkillTask'), description: t('dashboard.workerGetStartedAfter') },
-                    { title: t('dashboard.openGigsLink'), description: t('dashboard.goToMarketplace') },
-                  ]
-                : [{ title: t('dashboard.clientGetStarted'), description: t('dashboard.goToMarketplace') }]
-            }
-          />
-        </Card>
-      )}
+      {isEarner &&
+        (matches.length > 0 || transactions.length > 0 || decidedReviews.length > 0) && (
+          <div style={{ marginTop: 16 }}>
+            <ActivityFeed
+              role={role as 'worker' | 'client'}
+              matches={matches}
+              transactions={transactions}
+              tasks={tasks}
+            />
+          </div>
+        )}
 
       <Modal open={modal === 'skill'} title={t('dashboard.addSkillModalTitle')} footer={null} onCancel={() => setModal(null)} destroyOnHidden>
         <SkillVerificationForm tasks={tasks} onSubmitted={refreshTasks} />
