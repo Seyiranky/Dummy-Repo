@@ -7,6 +7,7 @@ import { gigApplicationApi } from '../../api/gigApplicationApi';
 import { adminApi } from '../../api/adminApi';
 import IdentityLink from '../common/IdentityLink';
 import GigThumbnail from '../common/GigThumbnail';
+import ChatThread from '../common/ChatThread';
 import { statusBadgeClass } from '../../utils/statusBadge';
 import { locationName } from '../../utils/locationName';
 import type { Gig, GigApplication } from '../../types';
@@ -103,6 +104,21 @@ const GigDetail = () => {
           </div>
         )}
       </div>
+
+      {role === 'worker' && gig.client && (
+        <div className="section">
+          <h2>{t('marketplace.gigDetail.messageClient')}</h2>
+          <p className="muted">
+            {t('marketplace.gigDetail.messageClientHint', { name: gig.client.name })}
+          </p>
+          <ChatThread
+            recipientId={gig.client.id}
+            recipientName={gig.client.name}
+            placeholder={t('marketplace.gigDetail.messagePlaceholder', { name: gig.client.name })}
+            emptyText={t('marketplace.gigDetail.messageEmpty')}
+          />
+        </div>
+      )}
 
       {isOwner && gig.status === 'pending_review' && (
         <div className="section">

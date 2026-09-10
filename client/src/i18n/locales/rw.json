@@ -139,7 +139,11 @@
       "statusLabel": "Uko bihagaze:",
       "applicants": "Abasabye ({{count}})",
       "noApplicationsYet": "Nta busabe burarangwa.",
-      "trustLabel": "ikizere {{score}}"
+      "trustLabel": "ikizere {{score}}",
+      "messageClient": "Ohereza ubutumwa kuri nyiri umurimo",
+      "messageClientHint": "Ufite ibibazo kuri uyu murimo? Ohereza {{name}} ubutumwa.",
+      "messagePlaceholder": "Andikira {{name}}",
+      "messageEmpty": "Nta butumwa buraboneka — imenyekanishe."
     }
   },
   "wallet": {

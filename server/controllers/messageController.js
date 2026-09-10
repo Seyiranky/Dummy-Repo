@@ -28,6 +28,15 @@ exports.sendMessage = async (req, res) => {
   }
 
   const message = await Message.create({ senderId: req.user.id, recipientId, body });
+
+  // Push the new message to both participants in real time. Emitting to the
+  // sender too keeps their other open tabs/devices in sync; the client
+  // de-duplicates by message id.
+  const io = req.app.get('io');
+  if (io) {
+    io.to(recipientId).to(req.user.id).emit('message:new', message);
+  }
+
   res.status(201).json(message);
 };
 

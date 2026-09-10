@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
 import { skillTaskApi } from '../../api/skillTaskApi';
 import { messageApi } from '../../api/messageApi';
 import { notificationApi } from '../../api/notificationApi';
+import { connectSocket } from '../../lib/socket';
 import Avatar from '../common/Avatar';
+import ChatThread from '../common/ChatThread';
 import type { AppNotification, Message } from '../../types';
 
 type Contact = { id: string; name: string };
@@ -17,9 +19,13 @@ const NotificationCenter = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [selection, setSelection] = useState<Selection>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [draft, setDraft] = useState('');
-  const [sending, setSending] = useState(false);
+
+  // Kept in refs so the socket listener (registered once) always sees the
+  // latest values without re-subscribing.
+  const myIdRef = useRef(profile?.id);
+  myIdRef.current = profile?.id;
+  const contactsRef = useRef(contacts);
+  contactsRef.current = contacts;
 
   useEffect(() => {
     const taskContacts =
@@ -54,29 +60,30 @@ const NotificationCenter = () => {
     notificationApi.listNotifications().then(setNotifications);
   }, []);
 
+  // When someone new messages us, pull them into the contacts list so the
+  // conversation is reachable without a refresh. The open thread itself is
+  // kept live by <ChatThread>.
   useEffect(() => {
-    if (selection?.type !== 'contact') return;
-    messageApi.listMessages(selection.user.id).then(setMessages);
-  }, [selection]);
-
-  const threadKey = useMemo(
-    () => (selection?.type === 'contact' ? selection.user.id : 'none'),
-    [selection],
-  );
-
-  const handleSend = async (e: FormEvent) => {
-    e.preventDefault();
-    if (selection?.type !== 'contact' || !draft.trim()) return;
-    setSending(true);
-    try {
-      await messageApi.sendMessage({ recipientId: selection.user.id, body: draft.trim() });
-      setDraft('');
-      const updated = await messageApi.listMessages(selection.user.id);
-      setMessages(updated);
-    } finally {
-      setSending(false);
-    }
-  };
+    const socket = connectSocket();
+    const onNewMessage = (message: Message) => {
+      if (
+        message.senderId !== myIdRef.current &&
+        !contactsRef.current.some((c) => c.id === message.senderId)
+      ) {
+        messageApi.listContacts().then((users) => {
+          setContacts((current) => {
+            const merged = new Map(current.map((c) => [c.id, c]));
+            for (const user of users) merged.set(user.id, { id: user.id, name: user.name });
+            return Array.from(merged.values());
+          });
+        });
+      }
+    };
+    socket.on('message:new', onNewMessage);
+    return () => {
+      socket.off('message:new', onNewMessage);
+    };
+  }, []);
 
   const selectNotification = async (notification: AppNotification) => {
     setSelection({ type: 'notification', id: notification.id });
@@ -138,33 +145,12 @@ const NotificationCenter = () => {
 
         <div>
           {selection?.type === 'contact' && (
-            <>
-              <div className="identity chat-header">
-                <Avatar name={selection.user.name} size={28} />
-                <span className="identity-name">{selection.user.name}</span>
-              </div>
-              <div className="message-thread" key={threadKey}>
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`message-bubble ${message.senderId === profile?.id ? 'own' : ''}`}
-                  >
-                    {message.body}
-                  </div>
-                ))}
-                {messages.length === 0 && <p className="muted">No messages yet — say hello.</p>}
-              </div>
-              <form className="message-form" onSubmit={handleSend}>
-                <input
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  placeholder={`Message ${selection.user.name}`}
-                />
-                <button type="submit" className="btn-primary" disabled={sending || !draft.trim()}>
-                  Send
-                </button>
-              </form>
-            </>
+            <ChatThread
+              key={selection.user.id}
+              recipientId={selection.user.id}
+              recipientName={selection.user.name}
+              showHeader
+            />
           )}
 
           {selectedNotification && (

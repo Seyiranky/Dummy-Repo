@@ -139,7 +139,11 @@
       "statusLabel": "Status:",
       "applicants": "Applicants ({{count}})",
       "noApplicationsYet": "No applications yet.",
-      "trustLabel": "trust {{score}}"
+      "trustLabel": "trust {{score}}",
+      "messageClient": "Message the client",
+      "messageClientHint": "Questions about this gig? Message {{name}} directly.",
+      "messagePlaceholder": "Message {{name}}",
+      "messageEmpty": "No messages yet — introduce yourself."
     }
   },
   "wallet": {
