@@ -17,7 +17,7 @@ import {
   Tag,
   Typography,
 } from 'antd';
-import { EnvironmentOutlined, WalletOutlined } from '@ant-design/icons';
+import { EnvironmentOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useAppSelector } from '../../store/hooks';
 import { gigApi } from '../../api/gigApi';
@@ -29,6 +29,15 @@ import ChatThread from '../common/ChatThread';
 import { gigImageSrc } from '../../utils/gigImage';
 import { locationName } from '../../utils/locationName';
 import type { Gig, GigApplication } from '../../types';
+
+const MetaRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <Flex justify="space-between" align="center" gap={12} style={{ padding: '9px 0' }}>
+    <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+      {label}
+    </Typography.Text>
+    <span style={{ textAlign: 'right', fontWeight: 500 }}>{children}</span>
+  </Flex>
+);
 
 const GigDetail = () => {
   const { t } = useTranslation();
@@ -140,96 +149,62 @@ const GigDetail = () => {
     },
   ];
 
-  const hasChat = role === 'worker' && gig.client;
+  const showChat = role === 'worker' && gig.client;
 
   return (
     <div>
-      {/* Hero */}
-      <div
-        style={{
-          position: 'relative',
-          borderRadius: 6,
-          overflow: 'hidden',
-          border: '1px solid var(--ant-color-border-secondary, #e4e4e7)',
-          marginBottom: 20,
-        }}
-      >
-        {cover && (
-          <img
-            src={cover}
-            alt=""
-            style={{ width: '100%', height: 300, objectFit: 'cover', display: 'block' }}
-          />
+      {/* Header */}
+      <Space size={8} style={{ marginBottom: 8 }}>
+        <Tag
+          style={{ textTransform: 'uppercase', fontSize: 11, letterSpacing: '0.04em', margin: 0 }}
+        >
+          {gig.skill?.name}
+        </Tag>
+        {gig.status !== 'open' && <StatusTag status={gig.status} />}
+      </Space>
+      <Typography.Title level={2} style={{ margin: '0 0 8px' }}>
+        {gig.title}
+      </Typography.Title>
+      <Space split={<Divider type="vertical" />} wrap style={{ color: '#71717a', marginBottom: 24 }}>
+        {gig.client && (
+          <span>
+            {t('marketplace.gigDetail.postedBy')}{' '}
+            <IdentityLink id={gig.client.id} name={gig.client.name} size={20} />
+          </span>
         )}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background:
-              'linear-gradient(to top, rgba(9,9,11,0.82) 0%, rgba(9,9,11,0.25) 45%, rgba(9,9,11,0) 72%)',
-          }}
-        />
-        <div style={{ position: 'absolute', left: 24, right: 24, bottom: 20, color: '#fff' }}>
-          <Space size={8} style={{ marginBottom: 10 }}>
-            <Tag
-              bordered={false}
+        {loc && (
+          <Space size={4}>
+            <EnvironmentOutlined />
+            {loc}
+          </Space>
+        )}
+      </Space>
+
+      <Row gutter={[24, 24]}>
+        <Col xs={24} lg={15}>
+          {cover && (
+            <div
               style={{
-                background: 'rgba(255,255,255,0.16)',
-                color: '#fff',
-                textTransform: 'uppercase',
-                fontSize: 11,
-                letterSpacing: '0.04em',
+                borderRadius: 6,
+                overflow: 'hidden',
+                border: '1px solid var(--ant-color-border-secondary, #e4e4e7)',
+                marginBottom: 20,
               }}
             >
-              {gig.skill?.name}
-            </Tag>
-            {gig.status !== 'open' && <StatusTag status={gig.status} />}
-          </Space>
-          <Typography.Title level={2} style={{ color: '#fff', margin: 0 }}>
-            {gig.title}
-          </Typography.Title>
-        </div>
-      </div>
+              <img
+                src={cover}
+                alt=""
+                style={{
+                  width: '100%',
+                  aspectRatio: '16 / 9',
+                  objectFit: 'cover',
+                  display: 'block',
+                }}
+              />
+            </div>
+          )}
 
-      <Row gutter={[20, 20]}>
-        <Col xs={24} lg={hasChat ? 15 : 24}>
-          {/* Summary strip */}
-          <Card styles={{ body: { padding: '16px 20px' } }}>
-            <Flex align="center" wrap="wrap" gap={24}>
-              <div>
-                <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                  Budget
-                </Typography.Text>
-                <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.1 }}>
-                  {Number(gig.budget).toLocaleString()}{' '}
-                  <span style={{ fontSize: 13, fontWeight: 400, color: '#71717a' }}>RWF</span>
-                </div>
-              </div>
-              <Divider type="vertical" style={{ height: 40 }} />
-              <Flex gap={8} align="center">
-                <EnvironmentOutlined style={{ color: '#71717a' }} />
-                <div>
-                  <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block' }}>
-                    Location
-                  </Typography.Text>
-                  <Typography.Text>{loc ?? '—'}</Typography.Text>
-                </div>
-              </Flex>
-              <Divider type="vertical" style={{ height: 40 }} />
-              <div>
-                <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block' }}>
-                  {t('marketplace.gigDetail.postedBy')}
-                </Typography.Text>
-                {gig.client ? (
-                  <IdentityLink id={gig.client.id} name={gig.client.name} size={22} />
-                ) : (
-                  '—'
-                )}
-              </div>
-            </Flex>
-          </Card>
-
-          <Card title="About this gig" style={{ marginTop: 20 }}>
+          <Card title="About this gig">
             <Typography.Paragraph style={{ margin: 0, fontSize: 14.5, lineHeight: 1.7 }}>
               {gig.description}
             </Typography.Paragraph>
@@ -265,54 +240,25 @@ const GigDetail = () => {
             </Card>
           )}
 
-          {role === 'worker' && (
+          {role === 'worker' && myApplication && (
             <Card style={{ marginTop: 20 }} title={t('marketplace.gigDetail.yourApplication')}>
-              {myApplication ? (
-                <>
-                  <Flex align="center" gap={10} style={{ marginBottom: 16 }}>
-                    <StatusTag status={myApplication.status} />
-                    <Typography.Text type="secondary">
-                      {myApplication.status === 'approved'
-                        ? "You're approved for this gig."
-                        : myApplication.status === 'rejected'
-                          ? 'This application was not accepted.'
-                          : 'Your application is with the reviewer.'}
-                    </Typography.Text>
-                  </Flex>
-                  <Steps
-                    size="small"
-                    progressDot
-                    current={myApplication.status === 'approved' ? 2 : 1}
-                    status={myApplication.status === 'rejected' ? 'error' : 'process'}
-                    items={[
-                      { title: 'Applied' },
-                      { title: 'Under review' },
-                      { title: 'Approved' },
-                    ]}
-                  />
-                </>
-              ) : gig.status === 'open' ? (
-                <Flex align="center" justify="space-between" wrap="wrap" gap={12}>
-                  <Typography.Text type="secondary">
-                    Ready to take this on? Send your application to the client.
-                  </Typography.Text>
-                  <Button
-                    type="primary"
-                    size="large"
-                    icon={<WalletOutlined />}
-                    loading={applying}
-                    onClick={handleApply}
-                  >
-                    {t('marketplace.gigDetail.applyButton')}
-                  </Button>
-                </Flex>
-              ) : (
+              <Flex align="center" gap={10} style={{ marginBottom: 16 }}>
+                <StatusTag status={myApplication.status} />
                 <Typography.Text type="secondary">
-                  {gig.status === 'pending_review'
-                    ? t('marketplace.gigDetail.awaitingApprovalNotice')
-                    : t('marketplace.gigDetail.noLongerAcceptingNotice')}
+                  {myApplication.status === 'approved'
+                    ? "You're approved for this gig."
+                    : myApplication.status === 'rejected'
+                      ? 'This application was not accepted.'
+                      : 'Your application is with the reviewer.'}
                 </Typography.Text>
-              )}
+              </Flex>
+              <Steps
+                size="small"
+                progressDot
+                current={myApplication.status === 'approved' ? 2 : 1}
+                status={myApplication.status === 'rejected' ? 'error' : 'process'}
+                items={[{ title: 'Applied' }, { title: 'Under review' }, { title: 'Approved' }]}
+              />
             </Card>
           )}
 
@@ -339,26 +285,65 @@ const GigDetail = () => {
           )}
         </Col>
 
-        {hasChat && gig.client && (
-          <Col xs={24} lg={9}>
-            <Card
-              title={t('marketplace.gigDetail.messageClient')}
-              style={{ position: 'sticky', top: 84 }}
-            >
-              <Typography.Paragraph type="secondary" style={{ fontSize: 13 }}>
-                {t('marketplace.gigDetail.messageClientHint', { name: gig.client.name })}
-              </Typography.Paragraph>
-              <ChatThread
-                recipientId={gig.client.id}
-                recipientName={gig.client.name}
-                placeholder={t('marketplace.gigDetail.messagePlaceholder', {
-                  name: gig.client.name,
-                })}
-                emptyText={t('marketplace.gigDetail.messageEmpty')}
-              />
+        {/* Sidebar */}
+        <Col xs={24} lg={9}>
+          <div style={{ position: 'sticky', top: 84, display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <Card>
+              <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+                Budget
+              </Typography.Text>
+              <div style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.1, marginTop: 2 }}>
+                {Number(gig.budget).toLocaleString()}{' '}
+                <span style={{ fontSize: 14, fontWeight: 400, color: '#71717a' }}>RWF</span>
+              </div>
+
+              <Divider style={{ margin: '14px 0' }} />
+
+              <MetaRow label="Category">{gig.skill?.name}</MetaRow>
+              <MetaRow label="Location">{loc ?? '—'}</MetaRow>
+              <MetaRow label={t('marketplace.gigDetail.postedBy')}>
+                {gig.client ? (
+                  <IdentityLink id={gig.client.id} name={gig.client.name} size={20} />
+                ) : (
+                  '—'
+                )}
+              </MetaRow>
+
+              {role === 'worker' && !myApplication && (
+                <>
+                  <Divider style={{ margin: '14px 0' }} />
+                  {gig.status === 'open' ? (
+                    <Button type="primary" size="large" block loading={applying} onClick={handleApply}>
+                      {t('marketplace.gigDetail.applyButton')}
+                    </Button>
+                  ) : (
+                    <Typography.Text type="secondary">
+                      {gig.status === 'pending_review'
+                        ? t('marketplace.gigDetail.awaitingApprovalNotice')
+                        : t('marketplace.gigDetail.noLongerAcceptingNotice')}
+                    </Typography.Text>
+                  )}
+                </>
+              )}
             </Card>
-          </Col>
-        )}
+
+            {showChat && gig.client && (
+              <Card title={t('marketplace.gigDetail.messageClient')}>
+                <Typography.Paragraph type="secondary" style={{ fontSize: 13 }}>
+                  {t('marketplace.gigDetail.messageClientHint', { name: gig.client.name })}
+                </Typography.Paragraph>
+                <ChatThread
+                  recipientId={gig.client.id}
+                  recipientName={gig.client.name}
+                  placeholder={t('marketplace.gigDetail.messagePlaceholder', {
+                    name: gig.client.name,
+                  })}
+                  emptyText={t('marketplace.gigDetail.messageEmpty')}
+                />
+              </Card>
+            )}
+          </div>
+        </Col>
       </Row>
     </div>
   );
