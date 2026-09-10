@@ -1,4 +1,5 @@
-const { Review, Match, Gig, User, Notification } = require('../models');
+const { Review, Match, Gig, User } = require('../models');
+const notify = require('../lib/notify');
 const trustScoreService = require('../services/trustScoreService');
 
 exports.createReview = async (req, res) => {
@@ -42,7 +43,7 @@ exports.createReview = async (req, res) => {
   await trustScoreService.recalculate(recipientId);
 
   const author = await User.findByPk(req.user.id);
-  await Notification.create({
+  await notify(req, {
     userId: recipientId,
     title: 'New review',
     body: `${author.name} left you a ${rating}-star review${match.gig ? ` for "${match.gig.title}"` : ''}.`,

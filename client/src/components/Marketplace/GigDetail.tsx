@@ -8,6 +8,7 @@ import {
   Card,
   Col,
   Divider,
+  Drawer,
   Empty,
   Flex,
   Result,
@@ -19,7 +20,8 @@ import {
   Tag,
   Typography,
 } from 'antd';
-import { HomeOutlined } from '@ant-design/icons';
+import { EditOutlined, HomeOutlined } from '@ant-design/icons';
+import GigForm from './GigForm';
 import type { ColumnsType } from 'antd/es/table';
 import { useAppSelector } from '../../store/hooks';
 import { gigApi } from '../../api/gigApi';
@@ -51,6 +53,7 @@ const GigDetail = () => {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [applying, setApplying] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   const refresh = () => {
     if (!id) return;
@@ -177,9 +180,16 @@ const GigDetail = () => {
         </Tag>
         {gig.status !== 'open' && <StatusTag status={gig.status} />}
       </Space>
-      <Typography.Title level={2} style={{ margin: '0 0 24px' }}>
-        {gig.title}
-      </Typography.Title>
+      <Flex justify="space-between" align="flex-start" gap={12} wrap="wrap" style={{ marginBottom: 24 }}>
+        <Typography.Title level={2} style={{ margin: 0 }}>
+          {gig.title}
+        </Typography.Title>
+        {isOwner && (
+          <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
+            Edit gig
+          </Button>
+        )}
+      </Flex>
 
       <Row gutter={[24, 24]}>
         <Col xs={24} lg={15}>
@@ -346,6 +356,22 @@ const GigDetail = () => {
           </div>
         </Col>
       </Row>
+
+      <Drawer
+        title="Edit gig"
+        width={480}
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        destroyOnHidden
+      >
+        <GigForm
+          gig={gig}
+          onPosted={() => {
+            setEditOpen(false);
+            refresh();
+          }}
+        />
+      </Drawer>
     </div>
   );
 };

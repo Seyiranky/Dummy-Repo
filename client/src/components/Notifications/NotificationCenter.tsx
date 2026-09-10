@@ -91,9 +91,14 @@ const NotificationCenter = () => {
         });
       }
     };
+    const onNewNotification = (n: AppNotification) => {
+      setNotifications((cur) => (cur.some((x) => x.id === n.id) ? cur : [n, ...cur]));
+    };
     socket.on('message:new', onNewMessage);
+    socket.on('notification:new', onNewNotification);
     return () => {
       socket.off('message:new', onNewMessage);
+      socket.off('notification:new', onNewNotification);
     };
   }, []);
 

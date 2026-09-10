@@ -1,4 +1,5 @@
-const { GigApplication, Gig, User, Match, Notification } = require('../models');
+const { GigApplication, Gig, User, Match } = require('../models');
+const notify = require('../lib/notify');
 
 const APPLICATION_INCLUDES = [
   { model: Gig, as: 'gig' },
@@ -30,7 +31,7 @@ exports.applyToGig = async (req, res) => {
   const admins = await User.findAll({ where: { role: 'admin' } });
   await Promise.all(
     admins.map((admin) =>
-      Notification.create({
+      notify(req, {
         userId: admin.id,
         title: 'New gig application',
         body: `${worker.name} applied to "${gig.title}".`,
@@ -80,7 +81,7 @@ exports.reviewApplication = async (req, res) => {
 
   if (decision === 'rejected') {
     await application.update({ status: 'rejected' });
-    await Notification.create({
+    await notify(req, {
       userId: application.workerId,
       title: 'Application not selected',
       body: `Your application for "${application.gig.title}" was not selected.`,
@@ -103,7 +104,7 @@ exports.reviewApplication = async (req, res) => {
   await Promise.all(
     otherPending.map(async (other) => {
       await other.update({ status: 'rejected' });
-      await Notification.create({
+      await notify(req, {
         userId: other.workerId,
         title: 'Application not selected',
         body: `Your application for "${application.gig.title}" was not selected.`,
@@ -111,12 +112,12 @@ exports.reviewApplication = async (req, res) => {
     }),
   );
 
-  await Notification.create({
+  await notify(req, {
     userId: application.workerId,
     title: 'Application approved',
     body: `Your application for "${application.gig.title}" was approved. You're now assigned to this gig.`,
   });
-  await Notification.create({
+  await notify(req, {
     userId: application.gig.clientId,
     title: 'Gig assigned',
     body: `Your gig "${application.gig.title}" has been assigned to a worker.`,

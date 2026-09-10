@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Badge, Button, Flex, Grid, Segmented, Space, Tooltip, Typography } from 'antd';
+import { App, Badge, Button, Flex, Grid, Segmented, Space, Tooltip, Typography } from 'antd';
 import {
   BellOutlined,
   BulbOutlined,
@@ -11,8 +11,10 @@ import {
 } from '@ant-design/icons';
 import { useAppSelector } from '../../store/hooks';
 import { notificationApi } from '../../api/notificationApi';
+import { connectSocket } from '../../lib/socket';
 import { useThemeMode } from '../../theme/ThemeProvider';
 import { NAV_ENTRIES, activeNavKey } from './navConfig';
+import type { AppNotification } from '../../types';
 
 const pageTitle = (pathname: string, t: (k: string) => string): string => {
   const key = activeNavKey(pathname);
@@ -35,6 +37,7 @@ const AppHeader = ({ collapsed, onToggle, onSearch }: AppHeaderProps) => {
   const location = useLocation();
   const { role } = useAppSelector((state) => state.auth);
   const { isDark, setMode } = useThemeMode();
+  const { notification } = App.useApp();
   const screens = Grid.useBreakpoint();
   const [unread, setUnread] = useState(0);
 
@@ -44,6 +47,24 @@ const AppHeader = ({ collapsed, onToggle, onSearch }: AppHeaderProps) => {
       .then((n) => setUnread(n.filter((x) => !x.readAt).length))
       .catch(() => setUnread(0));
   }, [location.pathname, role]);
+
+  useEffect(() => {
+    if (!role) return;
+    const socket = connectSocket();
+    const onNew = (n: AppNotification) => {
+      setUnread((u) => u + 1);
+      notification.open({
+        message: n.title,
+        description: n.body,
+        placement: 'bottomRight',
+        duration: 4,
+      });
+    };
+    socket.on('notification:new', onNew);
+    return () => {
+      socket.off('notification:new', onNew);
+    };
+  }, [role, notification]);
 
   const lang = i18n.resolvedLanguage === 'rw' ? 'rw' : 'en';
 

@@ -1,12 +1,26 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card, Col, Empty, Flex, Input, Row, Select, Skeleton, Switch, Tooltip, Typography } from 'antd';
-import { SearchOutlined } from '@ant-design/icons';
+import {
+  Card,
+  Col,
+  Empty,
+  Flex,
+  Input,
+  Row,
+  Segmented,
+  Select,
+  Skeleton,
+  Switch,
+  Tooltip,
+  Typography,
+} from 'antd';
+import { AppstoreOutlined, EnvironmentOutlined, SearchOutlined } from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchGigs } from '../../store/slices/gigSlice';
 import { useSavedGigs } from '../../hooks/useSavedGigs';
 import { distanceKm } from '../../utils/distance';
 import GigCard from './GigCard';
+import MarketplaceMap from './MarketplaceMap';
 
 type SortKey = 'newest' | 'budget_desc' | 'budget_asc' | 'nearest';
 
@@ -17,6 +31,7 @@ const GigFeed = ({ savedOnly = false }: { savedOnly?: boolean }) => {
   const gigs = useAppSelector((state) => state.gigs.items);
   const status = useAppSelector((state) => state.gigs.status);
   const [nearMe, setNearMe] = useState(false);
+  const [view, setView] = useState<'list' | 'map'>('list');
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string>('all');
   const [sort, setSort] = useState<SortKey>('newest');
@@ -110,6 +125,15 @@ const GigFeed = ({ savedOnly = false }: { savedOnly?: boolean }) => {
             </Flex>
           </Tooltip>
         )}
+        <Segmented
+          value={view}
+          onChange={(v) => setView(v as 'list' | 'map')}
+          style={{ marginLeft: 'auto' }}
+          options={[
+            { value: 'list', icon: <AppstoreOutlined /> },
+            { value: 'map', icon: <EnvironmentOutlined /> },
+          ]}
+        />
       </Flex>
 
       {status === 'loading' ? (
@@ -134,6 +158,13 @@ const GigFeed = ({ savedOnly = false }: { savedOnly?: boolean }) => {
             }
           />
         </Card>
+      ) : view === 'map' ? (
+        <>
+          <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 10 }}>
+            {finalGigs.length} gig{finalGigs.length === 1 ? '' : 's'} on the map
+          </Typography.Text>
+          <MarketplaceMap gigs={finalGigs} />
+        </>
       ) : (
         <>
           <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 10 }}>

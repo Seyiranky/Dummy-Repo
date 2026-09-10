@@ -1,4 +1,5 @@
-const { SkillTask, UserSkill, Skill, User, Notification } = require('../models');
+const { SkillTask, UserSkill, Skill, User } = require('../models');
+const notify = require('../lib/notify');
 const { assignReviewer } = require('../services/skillVerificationService');
 
 exports.submitTask = async (req, res) => {
@@ -27,7 +28,7 @@ exports.submitTask = async (req, res) => {
   });
 
   const worker = await User.findByPk(req.user.id);
-  await Notification.create({
+  await notify(req, {
     userId: reviewer.id,
     title: 'New skill verification request',
     body: `${worker.name} submitted evidence for ${skill.name} and needs your review.`,
@@ -69,7 +70,7 @@ exports.reviewTask = async (req, res) => {
     }
   }
 
-  await Notification.create({
+  await notify(req, {
     userId: task.workerId,
     title: decision === 'approved' ? 'Skill verified' : 'Skill submission rejected',
     body:

@@ -31,8 +31,7 @@ const AuthLayout = ({ children }: { children: ReactNode }) => {
             gap: 20,
             padding: 56,
             color: '#fff',
-            background:
-              'linear-gradient(150deg, #05668d 0%, #028090 55%, #0f9d8f 100%)',
+            background: '#0b0b0d',
             overflow: 'hidden',
           }}
         >
@@ -43,8 +42,14 @@ const AuthLayout = ({ children }: { children: ReactNode }) => {
               backgroundImage: `url(${authHeroPhoto})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
-              opacity: 0.16,
-              mixBlendMode: 'luminosity',
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background:
+                'linear-gradient(180deg, rgba(9,9,11,0.35) 0%, rgba(9,9,11,0.55) 60%, rgba(9,9,11,0.7) 100%)',
             }}
           />
           <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 20 }}>

@@ -1,4 +1,5 @@
-const { User, Gig, Skill, Match, Transaction, Notification } = require('../models');
+const { User, Gig, Skill, Match, Transaction } = require('../models');
+const notify = require('../lib/notify');
 
 exports.listUsers = async (req, res) => {
   const users = await User.findAll({ order: [['createdAt', 'DESC']] });
@@ -44,7 +45,7 @@ exports.reviewGig = async (req, res) => {
 
   await gig.update({ status: decision === 'approved' ? 'open' : 'rejected' });
 
-  await Notification.create({
+  await notify(req, {
     userId: gig.clientId,
     title: decision === 'approved' ? 'Gig approved' : 'Gig rejected',
     body:
@@ -75,7 +76,7 @@ exports.moderateUser = async (req, res) => {
 
   await user.update({ status: action === 'suspend' ? 'suspended' : 'active' });
 
-  await Notification.create({
+  await notify(req, {
     userId: user.id,
     title: action === 'suspend' ? 'Account suspended' : 'Account reactivated',
     body:
